@@ -36,6 +36,16 @@ export const loginUser = async (req, res) => {
   }
 };
 
+export const getProfile = async (req, res) => {
+  try {
+    const user = await userService.getUserById(req.user._id);
+    if (!user) return res.status(404).json({ message: "Utilisateur introuvable" });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 export const getUsers = async (req, res) => {
   const users = await userService.getAllUsers();
   res.json(users);

@@ -1,34 +1,76 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { busAPI, stopsAPI } from "../../services/api";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Fix pour les icônes Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+});
+
+// Composant MapSelector
+const MapSelector = ({ onLocationSelect, selectedLocation, center, zoom }) => {
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const map = L.map(mapRef.current).setView(center, zoom);
+    mapInstanceRef.current = map;
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+    }).addTo(map);
+
+    let marker = null;
+
+    map.on("click", (e) => {
+      const { lat, lng } = e.latlng;
+      if (marker) marker.remove();
+      marker = L.marker([lat, lng]).addTo(map);
+      onLocationSelect({ lat, lng });
+    });
+
+    return () => {
+      if (mapInstanceRef.current) mapInstanceRef.current.remove();
+    };
+  }, [center, zoom]);
+
+  return (
+    <div>
+      <div ref={mapRef} className="w-full h-64 rounded-lg mb-2"></div>
+      {selectedLocation && (
+        <p className="text-xs text-gray-500 mt-1">
+          📍 Position sélectionnée: {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
+        </p>
+      )}
+    </div>
+  );
+};
 
 export default function AdminBusPanel() {
   const [buses, setBuses] = useState([]);
   const [stops, setStops] = useState([]);
-  const [showStopModal, setShowStopModal] = useState(false);
   const [showLineModal, setShowLineModal] = useState(false);
-  const [editingStop, setEditingStop] = useState(null);
   const [editingLine, setEditingLine] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [selectedStopPosition, setSelectedStopPosition] = useState(null);
 
-  // Formulaire arrêt
-  const [stopForm, setStopForm] = useState({ name: "", lat: "", lng: "" });
-  
   // Formulaire ligne
   const [lineForm, setLineForm] = useState({
     lineName: "",
-    forwardStops: [],
-    forwardTimes: [],
-    hasReturnTrip: false,
-    returnStops: [],
-    returnTimes: [],
+    stops: [],
     isActive: true,
   });
   const [newStopName, setNewStopName] = useState("");
-  const [newStopTime, setNewStopTime] = useState("");
-  const [returnStopName, setReturnStopName] = useState("");
-  const [returnStopTime, setReturnStopTime] = useState("");
+  const [mapCenter] = useState([-21.45, 47.08]);
+  const [mapZoom] = useState(13);
 
   useEffect(() => {
     fetchData();
@@ -41,202 +83,248 @@ export default function AdminBusPanel() {
         busAPI.getAll(),
         stopsAPI.getAll(),
       ]);
-      setBuses(busesRes.data.data);
-      setStops(stopsRes.data.data);
+      setBuses(busesRes.data.data || []);
+      setStops(stopsRes.data.data || []);
+      setError("");
     } catch (err) {
-      setError("Erreur chargement");
+      console.error("Erreur fetchData:", err);
+      setError("Erreur lors du chargement des données");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddStop = async () => {
-    if (!stopForm.name || !stopForm.lat || !stopForm.lng) {
-      setError("Tous les champs sont requis");
+  // Statistiques pour le dashboard
+  const totalLines = buses.length;
+  const activeLines = buses.filter((b) => b.isActive).length;
+  const totalStops = stops.length;
+
+  const handleAddStopToLine = async () => {
+    if (!newStopName || !selectedStopPosition) {
+      setError("Veuillez saisir un nom et sélectionner une position sur la carte");
       return;
     }
-    try {
-      await stopsAPI.create({
-        name: stopForm.name,
-        coordinates: { lat: parseFloat(stopForm.lat), lng: parseFloat(stopForm.lng) }
-      });
-      fetchData();
-      setStopForm({ name: "", lat: "", lng: "" });
-      setSuccess("Arrêt ajouté");
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(err.response?.data?.message || "Erreur");
-    }
-  };
 
-  const handleUpdateStop = async () => {
-    if (!editingStop) return;
-    try {
-      await stopsAPI.update(editingStop._id, {
-        name: editingStop.name,
-        coordinates: editingStop.coordinates
-      });
-      fetchData();
-      setEditingStop(null);
-      setSuccess("Arrêt modifié");
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError("Erreur");
-    }
-  };
-
-  const handleDeleteStop = async (id, name) => {
-    if (!confirm(`Supprimer "${name}" ?`)) return;
-    try {
-      await stopsAPI.delete(id);
-      fetchData();
-      setSuccess("Arrêt supprimé");
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(err.response?.data?.message || "Erreur");
-    }
-  };
-
-  const handleAddForwardStop = () => {
-    if (newStopName && newStopTime) {
+    // Vérifier si l'arrêt existe déjà
+    const existingStop = stops.find((s) => s.name === newStopName);
+    if (existingStop) {
       setLineForm({
         ...lineForm,
-        forwardStops: [...lineForm.forwardStops, newStopName],
-        forwardTimes: [...lineForm.forwardTimes, parseInt(newStopTime)],
+        stops: [...lineForm.stops, existingStop],
       });
-      setNewStopName("");
-      setNewStopTime("");
-    }
-  };
-
-  const handleRemoveForwardStop = (index) => {
-    setLineForm({
-      ...lineForm,
-      forwardStops: lineForm.forwardStops.filter((_, i) => i !== index),
-      forwardTimes: lineForm.forwardTimes.filter((_, i) => i !== index),
-    });
-  };
-
-  const handleAddReturnStop = () => {
-    if (returnStopName && returnStopTime) {
+    } else {
+      // Ajouter l'arrêt temporairement dans le formulaire
       setLineForm({
         ...lineForm,
-        returnStops: [...lineForm.returnStops, returnStopName],
-        returnTimes: [...lineForm.returnTimes, parseInt(returnStopTime)],
+        stops: [...lineForm.stops, {
+          name: newStopName,
+          coordinates: selectedStopPosition,
+          isNew: true
+        }],
       });
-      setReturnStopName("");
-      setReturnStopTime("");
     }
+    setNewStopName("");
+    setSelectedStopPosition(null);
+    setError("");
   };
 
-  const handleRemoveReturnStop = (index) => {
-    setLineForm({
-      ...lineForm,
-      returnStops: lineForm.returnStops.filter((_, i) => i !== index),
-      returnTimes: lineForm.returnTimes.filter((_, i) => i !== index),
-    });
+  const handleRemoveStopFromLine = (index) => {
+    const newStops = lineForm.stops.filter((_, i) => i !== index);
+    setLineForm({ ...lineForm, stops: newStops });
   };
 
   const handleSaveLine = async () => {
-    if (!lineForm.lineName || lineForm.forwardStops.length < 2) {
-      setError("Nom et au moins 2 arrêts requis");
+    if (!lineForm.lineName.trim()) {
+      setError("Le nom de la ligne est requis");
       return;
     }
+    if (lineForm.stops.length < 2) {
+      setError("Une ligne doit avoir au moins 2 arrêts");
+      return;
+    }
+
     try {
-      if (editingLine) {
-        await busAPI.update(editingLine._id, lineForm);
-      } else {
-        await busAPI.create(lineForm);
+      // Créer d'abord les nouveaux arrêts
+      const stopIds = [];
+      for (const stop of lineForm.stops) {
+        if (stop._id) {
+          // Arrêt existe déjà
+          stopIds.push(stop._id);
+        } else {
+          // Nouvel arrêt à créer
+          const newStop = await stopsAPI.create({
+            name: stop.name,
+            coordinates: stop.coordinates,
+          });
+          stopIds.push(newStop.data.data._id);
+        }
       }
+
+      const lineData = {
+        lineName: lineForm.lineName.trim(),
+        stops: stopIds,
+        isActive: lineForm.isActive,
+      };
+
+      if (editingLine) {
+        await busAPI.update(editingLine._id, lineData);
+        setSuccess("Ligne modifiée avec succès");
+      } else {
+        await busAPI.create(lineData);
+        setSuccess("Ligne créée avec succès");
+      }
+
       fetchData();
       setShowLineModal(false);
       resetLineForm();
-      setSuccess(editingLine ? "Ligne modifiée" : "Ligne créée");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || "Erreur");
+      console.error("Erreur saveLine:", err);
+      setError(err.response?.data?.message || "Erreur lors de l'enregistrement");
     }
   };
 
   const resetLineForm = () => {
-    setLineForm({
-      lineName: "",
-      forwardStops: [],
-      forwardTimes: [],
-      hasReturnTrip: false,
-      returnStops: [],
-      returnTimes: [],
-      isActive: true,
-    });
+    setLineForm({ lineName: "", stops: [], isActive: true });
     setEditingLine(null);
+    setSelectedStopPosition(null);
+    setNewStopName("");
+    setError("");
   };
 
   const editLine = (line) => {
     setEditingLine(line);
     setLineForm({
       lineName: line.lineName,
-      forwardStops: line.forwardStops?.map(s => s.name) || [],
-      forwardTimes: line.forwardTimes || [],
-      hasReturnTrip: line.hasReturnTrip || false,
-      returnStops: line.returnStops?.map(s => s.name) || [],
-      returnTimes: line.returnTimes || [],
+      stops: line.stops || [],
       isActive: line.isActive,
     });
     setShowLineModal(true);
   };
 
   const deleteLine = async (id, name) => {
-    if (!confirm(`Supprimer la ligne "${name}" ?`)) return;
+    if (!confirm(`Supprimer définitivement la ligne "${name}" ?`)) return;
     try {
       await busAPI.delete(id);
       fetchData();
       setSuccess("Ligne supprimée");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError("Erreur");
+      setError("Erreur lors de la suppression");
+    }
+  };
+
+  const toggleLineActive = async (line) => {
+    try {
+      await busAPI.update(line._id, { ...line, isActive: !line.isActive });
+      fetchData();
+    } catch (err) {
+      setError("Erreur lors du changement de statut");
     }
   };
 
   return (
     <div>
-      {/* Messages */}
-      {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">{error}</div>}
-      {success && <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">{success}</div>}
+      {/* Messages d'erreur et succès */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          ⚠️ {error}
+        </div>
+      )}
+      {success && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+          ✅ {success}
+        </div>
+      )}
+
+      {/* Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-500">Lignes de bus</h3>
+          <p className="text-3xl font-bold text-slate-800 mt-1">{totalLines}</p>
+          <p className="text-xs text-green-600 mt-1">{activeLines} actives</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-500">Arrêts</h3>
+          <p className="text-3xl font-bold text-slate-800 mt-1">{totalStops}</p>
+          <p className="text-xs text-slate-500 mt-1">Points sur la carte</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-500">Trajets possibles</h3>
+          <p className="text-3xl font-bold text-slate-800 mt-1">
+            {totalLines * Math.max(0, totalStops - 1)}
+          </p>
+          <p className="text-xs text-slate-500 mt-1">Combinaisons départ → arrivée</p>
+        </div>
+      </div>
 
       {/* Actions */}
-      <div className="flex gap-3 mb-8">
-        <button onClick={() => setShowStopModal(true)} className="px-5 py-2.5 bg-slate-800 text-white rounded-lg">
-          Gérer les arrêts
-        </button>
-        <button onClick={() => { resetLineForm(); setShowLineModal(true); }} className="px-5 py-2.5 border border-slate-300 rounded-lg">
-          Nouvelle ligne
+      <div className="flex justify-end mb-6">
+        <button
+          onClick={() => {
+            resetLineForm();
+            setShowLineModal(true);
+          }}
+          className="px-5 py-2.5 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors"
+        >
+          + Nouvelle ligne
         </button>
       </div>
 
       {/* Liste des lignes */}
       {loading ? (
-        <div className="text-center py-10">Chargement...</div>
+        <div className="text-center py-10 text-slate-500">Chargement...</div>
       ) : buses.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border">Aucune ligne</div>
+        <div className="text-center py-16 bg-white rounded-xl border border-slate-200">
+          <p className="text-slate-500">Aucune ligne de bus enregistrée</p>
+          <p className="text-sm text-slate-400 mt-1">
+            Cliquez sur "Nouvelle ligne" pour commencer
+          </p>
+        </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {buses.map((bus) => (
-            <div key={bus._id} className="bg-white rounded-xl border p-5">
-              <div className="flex justify-between">
+            <div
+              key={bus._id}
+              className={`bg-white rounded-xl border p-4 shadow-sm transition-all ${
+                !bus.isActive ? "opacity-60 bg-slate-50" : ""
+              }`}
+            >
+              <div className="flex justify-between items-start flex-wrap gap-2">
                 <div>
-                  <h3 className="text-lg font-medium">Ligne {bus.lineName}</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Aller: {bus.forwardStops?.map(s => s.name).join(" → ")}
+                  <h3 className="text-lg font-medium text-slate-800">
+                    Ligne {bus.lineName}
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {bus.stops?.map((s) => s.name).join(" → ")}
                   </p>
-                  {bus.hasReturnTrip && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      Retour: {bus.returnStops?.map(s => s.name).join(" → ")}
-                    </p>
-                  )}
+                  <p className="text-xs text-slate-400 mt-1">
+                    📍 {bus.stops?.length || 0} arrêts
+                  </p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => editLine(bus)} className="px-3 py-1 border rounded">Modifier</button>
-                  <button onClick={() => deleteLine(bus._id, bus.lineName)} className="px-3 py-1 border border-red-200 text-red-600 rounded">Supprimer</button>
+                  <button
+                    onClick={() => toggleLineActive(bus)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      bus.isActive
+                        ? "border border-slate-300 text-slate-600 hover:bg-slate-100"
+                        : "bg-slate-800 text-white hover:bg-slate-700"
+                    }`}
+                  >
+                    {bus.isActive ? "Désactiver" : "Activer"}
+                  </button>
+                  <button
+                    onClick={() => editLine(bus)}
+                    className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    onClick={() => deleteLine(bus._id, bus.lineName)}
+                    className="px-3 py-1.5 border border-red-200 rounded-md text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    Supprimer
+                  </button>
                 </div>
               </div>
             </div>
@@ -244,112 +332,130 @@ export default function AdminBusPanel() {
         </div>
       )}
 
-      {/* Modal Arrêts */}
-      {showStopModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl w-full max-w-2xl p-6">
-            <h2 className="text-xl font-medium mb-4">Gestion des arrêts</h2>
-            
-            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-medium mb-2">{editingStop ? "Modifier" : "Ajouter"} un arrêt</h3>
-              <div className="grid grid-cols-3 gap-2 mb-2">
-                <input type="text" placeholder="Nom" value={editingStop ? editingStop.name : stopForm.name}
-                  onChange={(e) => editingStop ? setEditingStop({...editingStop, name: e.target.value}) : setStopForm({...stopForm, name: e.target.value})}
-                  className="border rounded p-2" />
-                <input type="number" step="any" placeholder="Latitude" value={editingStop ? editingStop.coordinates?.lat : stopForm.lat}
-                  onChange={(e) => editingStop ? setEditingStop({...editingStop, coordinates: {...editingStop.coordinates, lat: parseFloat(e.target.value)}}) : setStopForm({...stopForm, lat: e.target.value})}
-                  className="border rounded p-2" />
-                <input type="number" step="any" placeholder="Longitude" value={editingStop ? editingStop.coordinates?.lng : stopForm.lng}
-                  onChange={(e) => editingStop ? setEditingStop({...editingStop, coordinates: {...editingStop.coordinates, lng: parseFloat(e.target.value)}}) : setStopForm({...stopForm, lng: e.target.value})}
-                  className="border rounded p-2" />
-              </div>
-              <button onClick={editingStop ? handleUpdateStop : handleAddStop} className="px-4 py-2 bg-slate-800 text-white rounded">
-                {editingStop ? "Mettre à jour" : "Ajouter"}
-              </button>
-              {editingStop && <button onClick={() => setEditingStop(null)} className="ml-2 px-4 py-2 border rounded">Annuler</button>}
-            </div>
-
-            <div className="max-h-64 overflow-y-auto">
-              {stops.map((stop) => (
-                <div key={stop._id} className="flex justify-between items-center p-2 border-b">
-                  <div>
-                    <p className="font-medium">{stop.name}</p>
-                    <p className="text-xs text-gray-500">{stop.coordinates?.lat}, {stop.coordinates?.lng}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setEditingStop(stop)} className="text-blue-600">Modifier</button>
-                    <button onClick={() => handleDeleteStop(stop._id, stop.name)} className="text-red-600">Supprimer</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button onClick={() => { setShowStopModal(false); setEditingStop(null); }} className="w-full mt-4 p-2 border rounded">Fermer</button>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Lignes */}
+      {/* Modal Nouvelle ligne avec carte */}
       {showLineModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-medium mb-4">{editingLine ? "Modifier" : "Nouvelle"} ligne</h2>
-            
+          <div className="bg-white rounded-xl w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-medium text-slate-800 mb-4">
+              {editingLine ? "✏️ Modifier la ligne" : "➕ Nouvelle ligne de bus"}
+            </h2>
+
+            {/* Nom de la ligne */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Nom de la ligne</label>
-              <input type="text" value={lineForm.lineName} onChange={(e) => setLineForm({...lineForm, lineName: e.target.value})} className="w-full border rounded p-2" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Nom de la ligne <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={lineForm.lineName}
+                onChange={(e) =>
+                  setLineForm({ ...lineForm, lineName: e.target.value })
+                }
+                className="w-full border border-slate-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                placeholder="Ex: 40, 101, Est-Ouest"
+              />
             </div>
 
-            {/* Sens Aller */}
+            {/* Liste des arrêts */}
             <div className="mb-4">
-              <label className="block font-medium mb-2">Sens Aller (Départ → Terminus)</label>
-              {lineForm.forwardStops.map((stop, idx) => (
-                <div key={idx} className="flex gap-2 mb-1">
-                  <span className="flex-1 p-2 bg-gray-50 rounded">{stop} → {lineForm.forwardTimes[idx]} min</span>
-                  <button onClick={() => handleRemoveForwardStop(idx)} className="text-red-600">Supprimer</button>
-                </div>
-              ))}
-              <div className="flex gap-2 mt-2">
-                <select value={newStopName} onChange={(e) => setNewStopName(e.target.value)} className="flex-1 border rounded p-2">
-                  <option value="">Sélectionner un arrêt</option>
-                  {stops.map((s) => <option key={s._id} value={s.name}>{s.name}</option>)}
-                </select>
-                <input type="number" placeholder="Temps (min)" value={newStopTime} onChange={(e) => setNewStopTime(e.target.value)} className="w-24 border rounded p-2" />
-                <button onClick={handleAddForwardStop} className="px-4 py-2 bg-slate-800 text-white rounded">+</button>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Arrêts de la ligne (ordre du parcours)
+              </label>
+              
+              <div className="space-y-2 mb-3 max-h-40 overflow-y-auto border rounded-lg p-2 bg-slate-50">
+                {lineForm.stops.length === 0 ? (
+                  <p className="text-center text-slate-400 text-sm py-4">
+                    Aucun arrêt. Ajoutez-en un ci-dessous.
+                  </p>
+                ) : (
+                  lineForm.stops.map((stop, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-2 bg-white rounded-lg border"
+                    >
+                      <div>
+                        <span className="font-medium text-slate-700">
+                          {idx + 1}. {stop.name}
+                        </span>
+                        {stop.coordinates && (
+                          <span className="text-xs text-slate-400 ml-2">
+                            📍 {stop.coordinates.lat.toFixed(4)}, {stop.coordinates.lng.toFixed(4)}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleRemoveStopFromLine(idx)}
+                        className="text-red-500 text-sm hover:text-red-700"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Ajouter un arrêt avec carte */}
+              <div className="border rounded-lg p-4 bg-slate-50">
+                <p className="text-sm font-medium text-slate-700 mb-3">
+                  🗺️ Ajouter un arrêt à la ligne
+                </p>
+                <input
+                  type="text"
+                  value={newStopName}
+                  onChange={(e) => setNewStopName(e.target.value)}
+                  placeholder="Nom de l'arrêt"
+                  className="w-full border border-slate-300 rounded-lg p-2 mb-3 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                />
+
+                <MapSelector
+                  onLocationSelect={setSelectedStopPosition}
+                  selectedLocation={selectedStopPosition}
+                  center={mapCenter}
+                  zoom={mapZoom}
+                />
+
+                <button
+                  onClick={handleAddStopToLine}
+                  disabled={!newStopName || !selectedStopPosition}
+                  className="w-full mt-3 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  + Ajouter cet arrêt à la ligne
+                </button>
               </div>
             </div>
 
-            {/* Sens Retour */}
-            <div className="mb-4">
-              <label className="flex items-center gap-2 mb-2">
-                <input type="checkbox" checked={lineForm.hasReturnTrip} onChange={(e) => setLineForm({...lineForm, hasReturnTrip: e.target.checked})} />
-                <span className="font-medium">Ligne aller-retour (sens retour)</span>
+            {/* Ligne active */}
+            <div className="mb-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={lineForm.isActive}
+                  onChange={(e) =>
+                    setLineForm({ ...lineForm, isActive: e.target.checked })
+                  }
+                  className="rounded border-slate-300 w-4 h-4"
+                />
+                <span className="text-sm text-slate-700">Ligne active</span>
               </label>
-              
-              {lineForm.hasReturnTrip && (
-                <div className="ml-4">
-                  <label className="block text-sm font-medium mb-1">Sens Retour</label>
-                  {lineForm.returnStops.map((stop, idx) => (
-                    <div key={idx} className="flex gap-2 mb-1">
-                      <span className="flex-1 p-2 bg-gray-50 rounded">{stop} → {lineForm.returnTimes[idx]} min</span>
-                      <button onClick={() => handleRemoveReturnStop(idx)} className="text-red-600">Supprimer</button>
-                    </div>
-                  ))}
-                  <div className="flex gap-2 mt-2">
-                    <select value={returnStopName} onChange={(e) => setReturnStopName(e.target.value)} className="flex-1 border rounded p-2">
-                      <option value="">Sélectionner un arrêt</option>
-                      {stops.map((s) => <option key={s._id} value={s.name}>{s.name}</option>)}
-                    </select>
-                    <input type="number" placeholder="Temps (min)" value={returnStopTime} onChange={(e) => setReturnStopTime(e.target.value)} className="w-24 border rounded p-2" />
-                    <button onClick={handleAddReturnStop} className="px-4 py-2 bg-slate-800 text-white rounded">+</button>
-                  </div>
-                </div>
-              )}
             </div>
 
-            <div className="flex gap-2">
-              <button onClick={() => { setShowLineModal(false); resetLineForm(); }} className="flex-1 p-2 border rounded">Annuler</button>
-              <button onClick={handleSaveLine} className="flex-1 p-2 bg-slate-800 text-white rounded">Enregistrer</button>
+            {/* Boutons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowLineModal(false);
+                  resetLineForm();
+                }}
+                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSaveLine}
+                className="flex-1 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors"
+              >
+                {editingLine ? "Mettre à jour" : "Créer la ligne"}
+              </button>
             </div>
           </div>
         </div>
