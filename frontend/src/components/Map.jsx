@@ -32,7 +32,7 @@ function createMarkerIcon(category) {
         background: ${color};
         border: 3px solid white;
         border-radius: 50%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -92,9 +92,10 @@ function MarkerCluster({ places, onPlaceClick }) {
           <button
             onclick="window.dispatchEvent(new CustomEvent('place-click', { detail: '${place._id}' }))"
             style="
-              background: #059669; color: white; border: none;
-              padding: 6px 12px; border-radius: 8px; font-size: 12px;
-              cursor: pointer;
+              background: linear-gradient(135deg, #3b82f6, #2563eb);
+              color: white; border: none;
+              padding: 8px 16px; border-radius: 10px; font-size: 12px;
+              cursor: pointer; font-weight: 500;
             "
           >Voir détails</button>
         </div>
@@ -159,34 +160,40 @@ export default function Map({ places, onPlaceClick, className = "" }) {
   };
 
   return (
-    <div className={`relative rounded-xl overflow-hidden border border-slate-200 ${className}`}>
-      <form
-        onSubmit={handleSearch}
-        className="absolute top-3 left-3 right-3 z-[1000] max-w-md mx-auto"
-      >
-        <div className="flex items-center bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-          <svg className="w-5 h-5 text-slate-400 ml-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Rechercher un lieu à Fianarantsoa..."
-            className="flex-1 px-3 py-3 text-sm outline-none bg-transparent"
-          />
-          {searchQuery && (
+    <div className={`relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm ${className}`}>
+      {/* Floating glass search */}
+      <div className="absolute top-4 left-4 right-4 z-[1000]">
+        <form onSubmit={handleSearch} className="max-w-md mx-auto">
+          <div className="glass rounded-2xl shadow-lg overflow-hidden flex items-center">
+            <svg className="w-5 h-5 text-blue-500 ml-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher un lieu à Fianarantsoa..."
+              className="flex-1 px-3 py-3 text-sm outline-none bg-transparent text-slate-700 placeholder:text-slate-400"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="p-2 text-slate-400 hover:text-slate-600"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
             <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="p-2 text-slate-400 hover:text-slate-600"
+              type="submit"
+              className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-medium hover:from-blue-700 hover:to-blue-600 transition-all"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              OK
             </button>
-          )}
-        </div>
-      </form>
+          </div>
+        </form>
+      </div>
 
       <MapContainer
         center={FIANAR_CENTER}

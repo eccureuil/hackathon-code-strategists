@@ -1,59 +1,52 @@
 import { useState } from "react";
 
-export default function Input({
-  label,
-  error,
-  name,
-  type = "text",
-  className = "",
-  ...props
-}) {
+export default function Input({ label, name, type = "text", value, onChange, error, icon, placeholder, ...props }) {
   const [focused, setFocused] = useState(false);
+  const hasValue = value !== undefined && value !== null && value !== "";
+  const isActive = focused || hasValue;
 
   return (
     <div className="relative">
-      <input
-        id={name}
-        name={name}
-        type={type}
-        placeholder=" "
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        className={`
-          peer w-full border rounded-lg px-3 pt-5 pb-2 text-sm
-          transition-all duration-200 outline-none
-          ${
-            error
-              ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200"
-              : "border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-          }
-          disabled:bg-slate-50 disabled:text-slate-400
-          ${className}
-        `}
-        {...props}
-      />
-      <label
-        htmlFor={name}
-        className={`
-          absolute left-3 transition-all duration-200 pointer-events-none
-          ${
-            error ? "text-red-500" : "text-slate-500"
-          }
-          peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm
-          peer-focus:top-1 peer-focus:text-xs peer-focus:text-emerald-600
-          ${focused || props.value ? "top-1 text-xs" : ""}
-        `}
-      >
-        {label}
-      </label>
-      {error && (
-        <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-          </svg>
-          {error}
-        </p>
-      )}
+      <div className={`relative rounded-xl border transition-all duration-200 ${
+        error
+          ? "border-red-300 bg-red-50/50"
+          : isActive
+          ? "border-blue-400 bg-white shadow-sm shadow-blue-500/5"
+          : "border-slate-200 bg-white hover:border-slate-300"
+      }`}>
+        {icon && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none">
+            {icon}
+          </div>
+        )}
+        {label && (
+          <label
+            className={`absolute left-3 transition-all duration-200 pointer-events-none ${
+              icon ? "left-10" : "left-3"
+            } ${
+              isActive
+                ? "top-1.5 text-[10px] text-blue-600 font-medium"
+                : "top-1/2 -translate-y-1/2 text-sm text-slate-400"
+            }`}
+          >
+            {label}
+          </label>
+        )}
+        <input
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder={isActive ? placeholder : ""}
+          className={`w-full bg-transparent outline-none transition-all ${
+            icon ? "pl-10" : "pl-3"
+          } ${label ? "pt-5 pb-2" : "py-2.5"} pr-3 text-sm text-slate-800 placeholder:text-slate-400`}
+          {...props}
+        />
+      </div>
+      {error && <p className="mt-1 text-xs text-red-500 pl-1">{error}</p>}
     </div>
   );
 }
