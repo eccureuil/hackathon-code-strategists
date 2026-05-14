@@ -2,18 +2,6 @@
 import { useState } from "react";
 import { CalendarSelector } from "./CalendarSelector";
 
-const getCardStyle = (color) => {
-  const styles = {
-    pink:    "from-pink-500 to-rose-600 shadow-pink-500/30",
-    purple:  "from-purple-500 to-indigo-600 shadow-purple-500/30",
-    emerald: "from-emerald-500 to-teal-600 shadow-emerald-500/30",
-    blue:    "from-blue-500 to-cyan-600 shadow-blue-500/30",
-    amber:   "from-amber-500 to-orange-600 shadow-amber-500/30",
-    red:     "from-red-500 to-rose-600 shadow-red-500/30",
-  };
-  return styles[color] || styles.blue;
-};
-
 export const ReservationForm = ({ services, onSubmit, bookedSlots, isLoading }) => {
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState(null);
@@ -38,31 +26,125 @@ export const ReservationForm = ({ services, onSubmit, bookedSlots, isLoading }) 
           Choisissez votre service
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((service, idx) => (
-            <button
-              key={service.id}
-              onClick={() => {
-                setSelectedService(service);
-                setFormData(prev => ({ ...prev, serviceId: service.id }));
-                setStep(2);
-              }}
-              className={`group relative overflow-hidden bg-gradient-to-r ${getCardStyle(service.color)} p-0.5 rounded-2xl hover:scale-105 transition-all duration-300`}
-              style={{ animationDelay: `${idx * 0.1}s` }}
-            >
-              <div className="relative bg-gray-900/90 backdrop-blur rounded-2xl p-5 h-full hover:bg-gray-900/70 transition">
-                <div className="absolute top-2 right-2 w-20 h-20 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition" />
-                <div className="text-5xl mb-3 animate-bounce group-hover:animate-none">{service.icon}</div>
-                <h3 className="text-lg font-bold text-white mb-1">{service.name}</h3>
-                <p className="text-white/50 text-sm mb-3">{service.description}</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full">
-                    ⏱️ {service.duration} min
-                  </span>
-                  <span className="text-xs text-white/40">Gratuit</span>
-                </div>
+          {/* Acte de naissance - Pink */}
+          <button
+            onClick={() => {
+              setSelectedService(services[0]);
+              setFormData(prev => ({ ...prev, serviceId: services[0].id }));
+              setStep(2);
+            }}
+            className="group relative overflow-hidden bg-gradient-to-r from-pink-500 to-rose-600 p-0.5 rounded-2xl hover:scale-105 transition-all duration-300 shadow-lg shadow-pink-500/30"
+          >
+            <div className="relative bg-gray-900/90 backdrop-blur rounded-2xl p-5 h-full hover:bg-gray-900/70 transition">
+              <div className="text-5xl mb-3">👶</div>
+              <h3 className="text-lg font-bold text-white mb-1">Acte de naissance</h3>
+              <p className="text-white/50 text-sm mb-3">Premier acte d'état civil</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full">⏱️ 15 min</span>
+                <span className="text-xs text-white/40">Gratuit</span>
               </div>
-            </button>
-          ))}
+            </div>
+          </button>
+
+          {/* Acte de mariage - Purple */}
+          <button
+            onClick={() => {
+              setSelectedService(services[1]);
+              setFormData(prev => ({ ...prev, serviceId: services[1].id }));
+              setStep(2);
+            }}
+            className="group relative overflow-hidden bg-gradient-to-r from-purple-500 to-indigo-600 p-0.5 rounded-2xl hover:scale-105 transition-all duration-300 shadow-lg shadow-purple-500/30"
+          >
+            <div className="relative bg-gray-900/90 backdrop-blur rounded-2xl p-5 h-full hover:bg-gray-900/70 transition">
+              <div className="text-5xl mb-3">💍</div>
+              <h3 className="text-lg font-bold text-white mb-1">Acte de mariage</h3>
+              <p className="text-white/50 text-sm mb-3">Mariage civil</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full">⏱️ 20 min</span>
+                <span className="text-xs text-white/40">Gratuit</span>
+              </div>
+            </div>
+          </button>
+
+          {/* Certificat de résidence - Emerald */}
+          <button
+            onClick={() => {
+              setSelectedService(services[2]);
+              setFormData(prev => ({ ...prev, serviceId: services[2].id }));
+              setStep(2);
+            }}
+            className="group relative overflow-hidden bg-gradient-to-r from-emerald-500 to-teal-600 p-0.5 rounded-2xl hover:scale-105 transition-all duration-300 shadow-lg shadow-emerald-500/30"
+          >
+            <div className="relative bg-gray-900/90 backdrop-blur rounded-2xl p-5 h-full hover:bg-gray-900/70 transition">
+              <div className="text-5xl mb-3">🏠</div>
+              <h3 className="text-lg font-bold text-white mb-1">Certificat de résidence</h3>
+              <p className="text-white/50 text-sm mb-3">Justificatif de domicile</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full">⏱️ 20 min</span>
+                <span className="text-xs text-white/40">Gratuit</span>
+              </div>
+            </div>
+          </button>
+
+          {/* Carte d'identité - Blue */}
+          <button
+            onClick={() => {
+              setSelectedService(services[3]);
+              setFormData(prev => ({ ...prev, serviceId: services[3].id }));
+              setStep(2);
+            }}
+            className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-cyan-600 p-0.5 rounded-2xl hover:scale-105 transition-all duration-300 shadow-lg shadow-blue-500/30"
+          >
+            <div className="relative bg-gray-900/90 backdrop-blur rounded-2xl p-5 h-full hover:bg-gray-900/70 transition">
+              <div className="text-5xl mb-3">🆔</div>
+              <h3 className="text-lg font-bold text-white mb-1">Carte d'identité</h3>
+              <p className="text-white/50 text-sm mb-3">CNI nouvelle génération</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full">⏱️ 25 min</span>
+                <span className="text-xs text-white/40">Gratuit</span>
+              </div>
+            </div>
+          </button>
+
+          {/* Légalisation signature - Amber */}
+          <button
+            onClick={() => {
+              setSelectedService(services[4]);
+              setFormData(prev => ({ ...prev, serviceId: services[4].id }));
+              setStep(2);
+            }}
+            className="group relative overflow-hidden bg-gradient-to-r from-amber-500 to-orange-600 p-0.5 rounded-2xl hover:scale-105 transition-all duration-300 shadow-lg shadow-amber-500/30"
+          >
+            <div className="relative bg-gray-900/90 backdrop-blur rounded-2xl p-5 h-full hover:bg-gray-900/70 transition">
+              <div className="text-5xl mb-3">✍️</div>
+              <h3 className="text-lg font-bold text-white mb-1">Légalisation signature</h3>
+              <p className="text-white/50 text-sm mb-3">Authentification de document</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full">⏱️ 10 min</span>
+                <span className="text-xs text-white/40">Gratuit</span>
+              </div>
+            </div>
+          </button>
+
+          {/* Passeport - Red */}
+          <button
+            onClick={() => {
+              setSelectedService(services[5]);
+              setFormData(prev => ({ ...prev, serviceId: services[5].id }));
+              setStep(2);
+            }}
+            className="group relative overflow-hidden bg-gradient-to-r from-red-500 to-rose-600 p-0.5 rounded-2xl hover:scale-105 transition-all duration-300 shadow-lg shadow-red-500/30"
+          >
+            <div className="relative bg-gray-900/90 backdrop-blur rounded-2xl p-5 h-full hover:bg-gray-900/70 transition">
+              <div className="text-5xl mb-3">🛂</div>
+              <h3 className="text-lg font-bold text-white mb-1">Passeport</h3>
+              <p className="text-white/50 text-sm mb-3">Passeport biométrique</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full">⏱️ 30 min</span>
+                <span className="text-xs text-white/40">Gratuit</span>
+              </div>
+            </div>
+          </button>
         </div>
       </div>
     );
