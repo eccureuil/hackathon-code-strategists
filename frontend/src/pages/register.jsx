@@ -1,85 +1,101 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import API from "../services/api";
+import { useToast } from "../hooks/useToast";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
 
 export default function Register() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    mdp: "",
-    quartier: ""
-  });
+  const [form, setForm] = useState({ name: "", email: "", mdp: "", quartier: "" });
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
+  const addToast = useToast();
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+    if (errors[e.target.name]) setErrors((p) => ({ ...p, [e.target.name]: "" }));
+  };
+
+  const validate = () => {
+    const errs = {};
+    if (!form.name.trim()) errs.name = "Le nom est requis";
+    if (!form.email.trim()) errs.email = "L'email est requis";
+    if (!form.mdp || form.mdp.length < 6) errs.mdp = "6 caractères minimum";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) return;
 
+    setLoading(true);
     try {
-      const res = await API.post("/users/register", form);
-      alert("Compte créé 🎉");
-      console.log(res.data);
+      await API.post("/users/register", form);
+      addToast("Compte créé avec succès !", "success");
+      setTimeout(() => navigate("/login"), 800);
     } catch (err) {
-      alert(err.response?.data?.message || "Erreur register");
+      addToast(err.response?.data?.message || "Erreur lors de l'inscription", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-500 to-emerald-700 px-4">
-      <div className="bg-white w-full max-w-md p-8 rounded-2xl shadow-2xl">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-600 via-emerald-700 to-slate-900 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+            F
+          </div>
+          <h1 className="text-3xl font-bold text-white">Créer un compte</h1>
+          <p className="text-emerald-200 mt-1">Rejoignez Smart City Fianarantsoa</p>
+        </div>
 
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
-          Créer un compte
-        </h1>
-        <p className="text-center text-gray-500 mb-6">
-          Rejoins Smart City Fianarantsoa
-        </p>
+        <div className="bg-white rounded-2xl shadow-2xl p-8 space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              label="Nom complet"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              error={errors.name}
+            />
+            <Input
+              label="Email"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+              error={errors.email}
+            />
+            <Input
+              label="Mot de passe"
+              name="mdp"
+              type="password"
+              value={form.mdp}
+              onChange={handleChange}
+              error={errors.mdp}
+            />
+            <Input
+              label="Quartier"
+              name="quartier"
+              value={form.quartier}
+              onChange={handleChange}
+            />
+            <Button type="submit" loading={loading} className="w-full justify-center" size="lg">
+              Créer mon compte
+            </Button>
+          </form>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-
-          <input
-            name="name"
-            placeholder="Nom complet"
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500"
-          />
-
-          <input
-            name="email"
-            placeholder="Email"
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500"
-          />
-
-          <input
-            name="mdp"
-            type="password"
-            placeholder="Mot de passe"
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500"
-          />
-
-          <input
-            name="quartier"
-            placeholder="Quartier"
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500"
-          />
-
-          <button className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg font-semibold transition">
-            Créer compte
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Déjà un compte ?{" "}
-          <Link to="/login" className="text-green-600 font-semibold hover:underline">
-            Se connecter
-          </Link>
-        </p>
-
+          <p className="text-center text-sm text-slate-500">
+            Déjà un compte ?{" "}
+            <Link to="/login" className="text-emerald-600 font-semibold hover:text-emerald-700 transition-colors">
+              Se connecter
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
