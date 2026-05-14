@@ -1,114 +1,63 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import { useState } from "react";
 import AdminBusPanel from "./components/Bus/AdminBusPanel";
 import ClientBusPanel from "./components/Bus/ClientBusPanel";
 
 export default function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Vérifier si l'utilisateur est déjà connecté
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-    
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
-
-  const handleLogin = (userData, token) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("token", token);
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    window.location.href = "/login";
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Chargement...</div>
-      </div>
-    );
-  }
+  const [activeRole, setActiveRole] = useState("admin");
 
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-gray-100">
-        {user && (
-          <div className="bg-white shadow">
-            <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-              <h1 className="text-xl font-bold">
-                Fianara Smart City - Transport
-              </h1>
-              <div className="flex items-center gap-4">
-                <span className="text-gray-600">
-                  {user.role === "admin" ? "👑 Admin" : "👤 Citoyen"} : {user.name}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
-                >
-                  Déconnexion
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* En-tête */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <h1 className="text-2xl font-light tracking-tight text-slate-800">
+            Fianara Smart City
+          </h1>
+          <p className="text-sm text-slate-500 font-light mt-1">
+            Module de gestion des circuits de bus urbains
+          </p>
+        </div>
+      </header>
 
-        <Routes>
-          <Route path="/" element={
-            user ? (
-              user.role === "admin" ? 
-                <Navigate to="/admin" /> : 
-                <Navigate to="/client" />
-            ) : (
-              <Navigate to="/login" />
-            )
-          } />
-
-          <Route path="/login" element={
-            <Login onLogin={handleLogin} />
-          } />
-          
-          <Route path="/register" element={<Register />} />
-
-          <Route path="/admin" element={
-            user?.role === "admin" ? (
-              <div className="container mx-auto py-6">
-                <AdminBusPanel />
-              </div>
-            ) : (
-              <Navigate to="/login" />
-            )
-          } />
-
-          <Route path="/client" element={
-            user?.role === "client" ? (
-              <div className="container mx-auto py-6">
-                <ClientBusPanel />
-              </div>
-            ) : (
-              <Navigate to="/login" />
-            )
-          } />
-
-          <Route path="*" element={
-            <div className="flex items-center justify-center h-screen">
-              <h1 className="text-2xl font-bold">404 - Page not found</h1>
-            </div>
-          } />
-        </Routes>
+      {/* Sélecteur de rôle */}
+      <div className="max-w-7xl mx-auto px-6 mt-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-1 flex gap-1 w-full max-w-md">
+          <button
+            onClick={() => setActiveRole("admin")}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeRole === "admin"
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            Administration
+          </button>
+          <button
+            onClick={() => setActiveRole("client")}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeRole === "client"
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            Citoyens & Touristes
+          </button>
+        </div>
       </div>
-    </BrowserRouter>
+
+      {/* Contenu principal */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {activeRole === "admin" ? <AdminBusPanel /> : <ClientBusPanel />}
+      </main>
+
+      {/* Pied de page */}
+      <footer className="border-t border-slate-200 mt-12">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <p className="text-xs text-slate-400 text-center">
+            Fianara Smart City - Solution de mobilité urbaine
+          </p>
+        </div>
+      </footer>
+    </div>
   );
 }
