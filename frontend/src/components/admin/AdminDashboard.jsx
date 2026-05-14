@@ -22,16 +22,19 @@ export const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   // Récupérer tous les tickets
-  const fetchTickets = async () => {
-    try {
-      const response = await fetch("http://localhost:3000/api/reservations");
-      const data = await response.json();
-      setTickets(data);
-      setFilteredTickets(data);
-      updateStats(data);
-    } catch (error) {
-      console.error("Erreur:", error);
-    }
+ const fetchTickets = async () => {
+  try {
+    const response = await fetch("http://localhost:3000/api/reservations");
+    const data = await response.json();
+    setTickets(data);
+    setFilteredTickets(data);
+    updateStats(data);
+  } catch (error) {
+    console.error("Erreur:", error);
+  } finally {
+    setLoading(false); // ← AJOUTE CETTE LIGNE
+  }
+
   };
 
   // Récupérer les responsables
@@ -46,21 +49,19 @@ export const AdminDashboard = () => {
   };
 
   // Mettre à jour les statistiques
-  const updateStats = (data) => {
-    const today = new Date().toISOString().split("T")[0];
-    const todayTickets = data.filter(t => t.date === today);
-    const waiting = data.filter(t => t.status === "confirmed" && t.date === today);
-    const completed = data.filter(t => t.status === "completed");
-    const absent = data.filter(t => t.status === "absent");
-    
-    setStats({
-      todayTickets: todayTickets.length,
-      waitingTickets: waiting.length,
-      completedTickets: completed.length,
-      absentTickets: absent.length,
-      avgWaitTime: 12,
-    });
-  };
+ const updateStats = (data) => {
+  const waiting = data.filter(t => t.status === "confirmed");
+  const completed = data.filter(t => t.status === "completed");
+  const absent = data.filter(t => t.status === "absent");
+  
+  setStats({
+    todayTickets: data.length,
+    waitingTickets: waiting.length,
+    completedTickets: completed.length,
+    absentTickets: absent.length,
+    avgWaitTime: 12,
+  });
+};
 
   // Fonction de recherche
   const handleSearch = (term, type) => {
