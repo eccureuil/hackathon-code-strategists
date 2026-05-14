@@ -1,6 +1,7 @@
 
 import { useState } from "react";
-import { CalendarSelector } from "./Citoyen/CalendarSelector";
+import { CalendarSelector } from "../components/Citoyen/CalendarSelector";
+
 
 export const ReservationForm = ({ services, onSubmit, bookedSlots, isLoading }) => {
   const [step, setStep] = useState(1);
