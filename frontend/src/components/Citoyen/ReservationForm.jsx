@@ -1,34 +1,14 @@
-import React, { useState, lazy } from "react";
+// frontend/src/components/Citoyen/ReservationForm.jsx
+import { useState } from "react";
+import { CalendarSelector } from "./CalendarSelector";
 
-
-export const ReservationForm = ({
-  user,
-  services,
-  onSubmit,
-  bookedSlots,
-  isLoading,
-}) => {
-  const [formData, setFormData] = useState({
-    serviceId: "",
-    motif: "",
-    date: null,
-    time: null,
-  });
+export const ReservationForm = ({ services, onSubmit, bookedSlots, isLoading }) => {
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState(null);
-
-  const handleServiceSelect = (service) => {
-    setSelectedService(service);
-    setFormData((prev) => ({ ...prev, serviceId: service.id }));
-    setStep(2);
-  };
+  const [formData, setFormData] = useState({ serviceId: "", motif: "", date: null, time: null });
 
   const handleDateTimeSelect = (dateTime) => {
-    setFormData((prev) => ({
-      ...prev,
-      date: dateTime.date,
-      time: dateTime.time,
-    }));
+    setFormData(prev => ({ ...prev, date: dateTime.date, time: dateTime.time }));
   };
 
   const handleSubmit = (e) => {
@@ -40,30 +20,34 @@ export const ReservationForm = ({
 
   if (step === 1) {
     return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-800">
-          📋 Choisissez votre service
-        </h3>
-        <div className="grid gap-3">
-          {services.map((service) => (
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+          <span className="text-3xl animate-pulse">⏳</span>
+          Choisissez votre service
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {services.map((service, idx) => (
             <button
               key={service.id}
-              onClick={() => handleServiceSelect(service)}
-              className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all group"
+              onClick={() => {
+                setSelectedService(service);
+                setFormData(prev => ({ ...prev, serviceId: service.id }));
+                setStep(2);
+              }}
+              className={`group relative overflow-hidden bg-gradient-to-r ${service.gradient} p-0.5 rounded-2xl hover:scale-105 transition-all duration-300 animate-fade-in-up`}
+              style={{ animationDelay: `${idx * 0.1}s` }}
             >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{service.icon || "📄"}</span>
-                <div className="text-left">
-                  <div className="font-medium text-gray-800">
-                    {service.name}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    Durée estimée : {service.duration} min
-                  </div>
+              <div className="relative bg-gray-900/90 backdrop-blur rounded-2xl p-5 h-full hover:bg-gray-900/70 transition">
+                <div className="absolute top-2 right-2 w-20 h-20 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition" />
+                <div className="text-5xl mb-3 animate-bounce group-hover:animate-none">{service.icon}</div>
+                <h3 className="text-lg font-bold text-white mb-1">{service.name}</h3>
+                <p className="text-white/50 text-sm mb-3">{service.description}</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full">
+                    ⏱️ {service.duration} min
+                  </span>
+                  <span className="text-xs text-white/40">Gratuit</span>
                 </div>
-              </div>
-              <div className="text-blue-500 group-hover:translate-x-1 transition">
-                →
               </div>
             </button>
           ))}
@@ -72,72 +56,47 @@ export const ReservationForm = ({
     );
   }
 
-  // lazy est maintenant disponible !
-  const CalendarSelector = lazy(() => import("./CalendarSelector"));
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Service sélectionné */}
-      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">{selectedService?.icon || "📄"}</span>
+    <div className="animate-fade-in">
+      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl border border-white/20 mb-6">
+        <div className="flex items-center gap-3">
+          <span className="text-4xl animate-pulse">{selectedService?.icon}</span>
           <div>
-            <div className="font-medium">{selectedService?.name}</div>
-            <div className="text-sm text-gray-500">
-              {selectedService?.duration} minutes
-            </div>
+            <h3 className="text-xl font-bold text-white">{selectedService?.name}</h3>
+            <p className="text-white/50">Durée estimée : {selectedService?.duration} minutes</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setStep(1)}
-          className="text-blue-500 text-sm hover:underline"
-        >
+        <button onClick={() => setStep(1)} className="text-white/60 hover:text-white transition text-sm">
           Modifier
         </button>
       </div>
 
-      {/* Calendrier - Attention: lazy loading nécessite Suspense */}
-      <React.Suspense fallback={<div className="text-center py-8">Chargement du calendrier...</div>}>
-        <CalendarSelector
-          service={selectedService}
-          onSelect={handleDateTimeSelect}
-          bookedSlots={bookedSlots}
-        />
-      </React.Suspense>
+      <CalendarSelector onSelect={handleDateTimeSelect} bookedSlots={bookedSlots} />
 
-      {/* Motif */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          💬 Motif de la demande
-        </label>
+      <div className="mt-6">
+        <label className="block text-white/80 mb-2">💬 Motif de la demande</label>
         <textarea
           value={formData.motif}
-          onChange={(e) => setFormData((prev) => ({ ...prev, motif: e.target.value }))}
+          onChange={(e) => setFormData(prev => ({ ...prev, motif: e.target.value }))}
           rows="3"
-          className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-          placeholder="Ex: Demande d'acte de naissance pour mon enfant..."
+          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-blue-500 transition"
+          placeholder="Ex: Demande d'acte de naissance..."
           required
         />
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-3 pt-4">
-        <button
-          type="button"
-          onClick={() => setStep(1)}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition"
-        >
+      <div className="flex gap-3 mt-6">
+        <button onClick={() => setStep(1)} className="flex-1 px-4 py-3 border border-white/20 rounded-xl text-white hover:bg-white/10 transition">
           Retour
         </button>
         <button
-          type="submit"
+          onClick={handleSubmit}
           disabled={isLoading || !formData.date || !formData.time}
-          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl text-white font-semibold hover:scale-105 transition-all disabled:opacity-50"
         >
-          {isLoading ? "Réservation..." : "Confirmer la réservation"}
+          {isLoading ? "Réservation..." : "✅ Confirmer"}
         </button>
       </div>
-    </form>
+    </div>
   );
 };
