@@ -26,31 +26,57 @@ export const CitoyenPage = ({ user }) => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleReservation = async (formData) => {
-    setLoading(true);
-    setTimeout(() => {
-      const newTicket = {
-        id: Date.now(),
-        number: `TKT-${Date.now()}`,
-        citizenName: user?.name || "RAKOTO Jean",
-        citizenId: user?.id || "CIN-123456",
+ const handleReservation = async (formData) => {
+  setLoading(true);
+  
+  try {
+    // Appel API vers backend
+    const response = await fetch("http://localhost:3000/api/reservations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         serviceId: formData.serviceId,
         serviceName: services.find((s) => s.id === formData.serviceId)?.name,
         date: formData.date.toISOString().split("T")[0],
         time: formData.time,
-        duration: services.find((s) => s.id === formData.serviceId)?.duration,
         motif: formData.motif,
-        responsibleName: "Mme Rasoa",
-        counter: "Guichet 2",
-        status: "confirmed",
+        citizenName: user?.name || "RAKOTO Jean",
+        citizenPhone: user?.phone || "034 12 345 67",
+        citizenEmail: user?.email || "",
+      }),
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      // Ticket créé avec succès dans MongoDB
+      const newTicket = {
+        id: data._id,
+        number: data.ticketNumber,
+        citizenName: data.citizenName,
+        serviceId: data.serviceId,
+        serviceName: data.serviceName,
+        date: data.date,
+        time: data.time,
+        duration: services.find((s) => s.id === data.serviceId)?.duration,
+        motif: data.motif,
+        responsibleName: data.responsibleName || "Mme Rasoa",
+        counter: data.counter || "Guichet 2",
+        status: data.status,
       };
       setActiveTicket(newTicket);
       setHasReservation(true);
       showToast("✅ Réservation confirmée !", "success");
-      setLoading(false);
-    }, 1000);
-  };
-
+    } else {
+      showToast(data.error || "Erreur lors de la réservation", "error");
+    }
+  } catch (error) {
+    console.error("Erreur API:", error);
+    showToast("Impossible de contacter le serveur", "error");
+  } finally {
+    setLoading(false);
+  }
+};
   const handleCancelReservation = async () => {
     if (confirm("Voulez-vous vraiment annuler votre réservation ?")) {
       setLoading(true);
