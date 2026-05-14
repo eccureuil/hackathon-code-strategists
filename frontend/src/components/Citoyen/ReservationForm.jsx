@@ -2,6 +2,18 @@
 import { useState } from "react";
 import { CalendarSelector } from "./CalendarSelector";
 
+const getCardStyle = (color) => {
+  const styles = {
+    pink:    "from-pink-500 to-rose-600 shadow-pink-500/30",
+    purple:  "from-purple-500 to-indigo-600 shadow-purple-500/30",
+    emerald: "from-emerald-500 to-teal-600 shadow-emerald-500/30",
+    blue:    "from-blue-500 to-cyan-600 shadow-blue-500/30",
+    amber:   "from-amber-500 to-orange-600 shadow-amber-500/30",
+    red:     "from-red-500 to-rose-600 shadow-red-500/30",
+  };
+  return styles[color] || styles.blue;
+};
+
 export const ReservationForm = ({ services, onSubmit, bookedSlots, isLoading }) => {
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState(null);
@@ -34,7 +46,7 @@ export const ReservationForm = ({ services, onSubmit, bookedSlots, isLoading }) 
                 setFormData(prev => ({ ...prev, serviceId: service.id }));
                 setStep(2);
               }}
-              className={`group relative overflow-hidden bg-gradient-to-r ${service.gradient} p-0.5 rounded-2xl hover:scale-105 transition-all duration-300 animate-fade-in-up`}
+              className={`group relative overflow-hidden bg-gradient-to-r ${getCardStyle(service.color)} p-0.5 rounded-2xl hover:scale-105 transition-all duration-300`}
               style={{ animationDelay: `${idx * 0.1}s` }}
             >
               <div className="relative bg-gray-900/90 backdrop-blur rounded-2xl p-5 h-full hover:bg-gray-900/70 transition">

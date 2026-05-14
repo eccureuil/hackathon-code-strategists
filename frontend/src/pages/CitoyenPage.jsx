@@ -11,14 +11,14 @@ export const CitoyenPage = ({ user }) => {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
-  const [services] = useState([
-    { id: 1, name: "Acte de naissance", duration: 15, icon: "👶", gradient: "from-pink-500 to-rose-600", shadow: "shadow-pink-500/30", description: "Premier acte d'état civil" },
-    { id: 2, name: "Acte de mariage", duration: 20, icon: "💍", gradient: "from-purple-500 to-indigo-600", shadow: "shadow-purple-500/30", description: "Mariage civil" },
-    { id: 3, name: "Certificat de résidence", duration: 20, icon: "🏠", gradient: "from-emerald-500 to-teal-600", shadow: "shadow-emerald-500/30", description: "Justificatif de domicile" },
-    { id: 4, name: "Carte d'identité", duration: 25, icon: "🆔", gradient: "from-blue-500 to-cyan-600", shadow: "shadow-blue-500/30", description: "CNI nouvelle génération" },
-    { id: 5, name: "Légalisation signature", duration: 10, icon: "✍️", gradient: "from-amber-500 to-orange-600", shadow: "shadow-amber-500/30", description: "Authentification de document" },
-    { id: 6, name: "Passeport", duration: 30, icon: "🛂", gradient: "from-red-500 to-rose-600", shadow: "shadow-red-500/30", description: "Passeport biométrique" },
-  ]);
+ const [services] = useState([
+  { id: 1, name: "Acte de naissance", duration: 15, icon: "👶", color: "pink", description: "Premier acte d'état civil" },
+  { id: 2, name: "Acte de mariage", duration: 20, icon: "💍", color: "purple", description: "Mariage civil" },
+  { id: 3, name: "Certificat de résidence", duration: 20, icon: "🏠", color: "emerald", description: "Justificatif de domicile" },
+  { id: 4, name: "Carte d'identité", duration: 25, icon: "🆔", color: "blue", description: "CNI nouvelle génération" },
+  { id: 5, name: "Légalisation signature", duration: 10, icon: "✍️", color: "amber", description: "Authentification de document" },
+  { id: 6, name: "Passeport", duration: 30, icon: "🛂", color: "red", description: "Passeport biométrique" },
+]);
   const [bookedSlots] = useState([]);
 
   const showToast = (message, type = "info") => {
