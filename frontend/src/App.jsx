@@ -1,52 +1,41 @@
-// frontend/src/App.jsx
-import { useState } from "react";
-import { CitoyenPage } from "./pages/CitoyenPage";
-import { AdminDashboard } from "./components/admin/AdminDashboard";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ToastProvider } from "./hooks/useToast";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Home from "./pages/historicPlaces/home";
+import AdminPlaces from "./pages/historicPlaces/AdminPlaces";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-function App() {
-  const [role, setRole] = useState("citoyen"); // "citoyen" ou "admin"
-
-  const mockUser = {
-    id: 1,
-    name: "RAKOTO Jean",
-    phone: "034 12 345 67",
-    email: "rakoto.jean@email.com",
-    cin: "123 456 789 012",
-  };
-
+export default function App() {
   return (
-    <div className="font-sans">
-      {/* Switch de rôle (pour démo) */}
-      <div className="fixed bottom-4 right-4 z-50 bg-white rounded-full shadow-lg p-1 flex gap-1">
-        <button
-          onClick={() => setRole("citoyen")}
-          className={`px-4 py-2 rounded-full text-sm transition ${
-            role === "citoyen"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-          }`}
-        >
-          👤 Citoyen
-        </button>
-        <button
-          onClick={() => setRole("admin")}
-          className={`px-4 py-2 rounded-full text-sm transition ${
-            role === "admin"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-          }`}
-        >
-          🛡️ Admin
-        </button>
-      </div>
-
-      {role === "citoyen" ? (
-        <CitoyenPage user={mockUser} />
-      ) : (
-        <AdminDashboard />
-      )}
-    </div>
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" />} />
+          <Route path="/home" element={<Home />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminPlaces />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="*"
+            element={
+              <div className="flex items-center justify-center h-screen bg-slate-50">
+                <div className="text-center">
+                  <h1 className="text-6xl font-bold text-slate-300">404</h1>
+                  <p className="text-slate-500 mt-2">Page non trouvée</p>
+                </div>
+              </div>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   );
 }
-
-export default App;
