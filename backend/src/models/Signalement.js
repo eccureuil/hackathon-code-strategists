@@ -1,8 +1,9 @@
 import mongoose from 'mongoose'
 
 const signalementSchema = new mongoose.Schema({
-  citoyenNom: {
-    type: String,
+  citoyenId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref:"User",
     required: true
   },
   typeProbleme: {

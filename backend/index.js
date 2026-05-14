@@ -6,6 +6,7 @@ import connectDB from "./src/config/db.js";
 
 import userRoutes from "./src/routes/user.route.js";
 import historicPlaceRoutes from "./src/routes/historicPlace.route.js";
+import SignalementRoutes from "./src/routes/signalements.js"
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use("/uploads", express.static("uploads"));
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/historic-places", historicPlaceRoutes);
+app.use("/api/signalements",SignalementRoutes );
 
 // Route test
 app.get("/", (req, res) => {

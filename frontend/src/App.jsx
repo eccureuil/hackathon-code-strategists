@@ -1,30 +1,3 @@
-<<<<<<< HEAD
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
-import PageCitoyen from './pages/PageCitoyen'
-import PageAdmin from './pages/PageAdmin'
-import Notification from './components/commun/Notification'
-
-function App() {
-  return (
-    <BrowserRouter>
-      <Notification />
-      <h1 className="text-red-500 text-5xl text-center">Fianar Smart City</h1>
-
-      <nav style={{ textAlign: 'center', margin: '20px' }}>
-        <Link to="/" style={{ marginRight: '10px' }}>📱 Citoyen</Link>
-        <Link to="/admin">👑 Admin</Link>
-      </nav>
-
-      <Routes>
-        <Route path="/" element={<PageCitoyen />} />
-        <Route path="/admin" element={<PageAdmin />} />
-      </Routes>
-    </BrowserRouter>
-  )
-}
-
-export default App
-=======
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastProvider } from "./hooks/useToast";
 import Login from "./pages/Login";
@@ -32,12 +5,17 @@ import Register from "./pages/Register";
 import Home from "./pages/historicPlaces/home";
 import AdminPlaces from "./pages/historicPlaces/AdminPlaces";
 import ProtectedRoute from "./components/ProtectedRoute";
+import PageAdmin from "./pages/PageAdmin";
+import PageCitoyen from "./pages/PageCitoyen";
+
 
 export default function App() {
   return (
     <ToastProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/signalementAdmin" element={<ProtectedRoute><PageAdmin/></ProtectedRoute>} />
+          <Route path="/signalement" element={<PageCitoyen/>} />
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/home" element={<Home />} />
           <Route
@@ -66,4 +44,3 @@ export default function App() {
     </ToastProvider>
   );
 }
->>>>>>> 4121fc1381db0668d1f6d8fd3179a18e7d4df151

@@ -10,7 +10,7 @@ const ModaleDetail = ({ signalement, onSave, onClose }) => {
   e.preventDefault()
   try {
     // Requête API pour mettre à jour le statut
-    await axios.put(`http://localhost:5000/api/signalements/${signalement._id}/statut`, {
+    await axios.put(`http://localhost:5050/api/signalements/${signalement._id}/statut`, {
       statut,
       reponseAdmin: reponse,
       serviceAssigne: service

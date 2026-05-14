@@ -17,7 +17,7 @@ const VerificationDoublon = ({ coordonnees, typeProbleme, onDoublonTrouve, onAuc
 
       try {
         const response = await axios.get(
-          `http://localhost:5000/api/signalements/verifier-doublon?lat=${coordonnees.lat}&lng=${coordonnees.lng}&rayon=50`
+          `http://localhost:5050/api/signalements/verifier-doublon?lat=${coordonnees.lat}&lng=${coordonnees.lng}&rayon=50`
         )
 
         if (response.data.doublonTrouve && response.data.signalements.length > 0) {
@@ -52,7 +52,7 @@ const VerificationDoublon = ({ coordonnees, typeProbleme, onDoublonTrouve, onAuc
     if (!doublonTrouve) return
 
     try {
-      const response = await axios.put(`http://localhost:5000/api/signalements/${doublonTrouve._id}/plusun`)
+      const response = await axios.put(`http://localhost:5050/api/signalements/${doublonTrouve._id}/plusun`)
       
       if (response.data.success) {
         setMessage(`👍 Merci ! +1 ajouté. ${response.data.nouveauTotal} personne(s) ont signalé ce problème.`)

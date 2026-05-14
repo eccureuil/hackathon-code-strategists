@@ -6,6 +6,7 @@ import axios from 'axios'
 
 const FormulaireSignalement = () => {
   const [formData, setFormData] = useState({
+    citoyenNom: '',
     typeProbleme: 'dechet',
     description: '',
     solutionProposee: '',
@@ -16,7 +17,7 @@ const FormulaireSignalement = () => {
   const [coordonneesRecherche, setCoordonneesRecherche] = useState(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [peutEnvoyer, setPeutEnvoyer] = useState(false)
+  const [peutEnvoyer, setPeutEnvoyer] = useState(false)   // ← AJOUTÉ
 
   const typesProbleme = [
     { value: 'dechet', label: '🗑️ Déchet / Ordure' },
@@ -48,14 +49,11 @@ const FormulaireSignalement = () => {
   }
 
   const envoyerSignalement = async () => {
-    // Récupérer le nom depuis localStorage
-    const citoyenNom = localStorage.getItem('citoyenNom')
-    if (!citoyenNom) {
-      setMessage('Erreur : aucun nom utilisateur trouvé. Veuillez vous reconnecter.')
+    // Validation
+    if (!formData.citoyenNom.trim()) {
+      setMessage('Veuillez entrer votre nom')
       return
     }
-
-    // Validations
     if (!formData.description.trim()) {
       setMessage('Veuillez décrire le problème')
       return
@@ -76,8 +74,9 @@ const FormulaireSignalement = () => {
     setLoading(true)
     setMessage('')
 
+    // Préparer les données
     const data = new FormData()
-    data.append('citoyenNom', citoyenNom)
+    data.append('citoyenNom', formData.citoyenNom)
     data.append('typeProbleme', formData.typeProbleme)
     data.append('description', formData.description)
     data.append('solutionProposee', formData.solutionProposee)
@@ -89,11 +88,12 @@ const FormulaireSignalement = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/api/signalements', data)
+      const response = await axios.post('http://localhost:5050/api/signalements', data)
       setMessage(`✅ Signalement envoyé ! ID: ${response.data.signalement._id}`)
       
-      // Réinitialiser le formulaire (sauf le typeProbleme)
+      // Réinitialiser formulaire
       setFormData({
+        citoyenNom: '',
         typeProbleme: 'dechet',
         description: '',
         solutionProposee: '',
@@ -101,7 +101,7 @@ const FormulaireSignalement = () => {
       })
       setCoordonnees(null)
       setCoordonneesRecherche(null)
-      setPeutEnvoyer(false)
+      setPeutEnvoyer(false)  // ← Réinitialiser
       
     } catch (error) {
       console.error(error)
@@ -116,7 +116,17 @@ const FormulaireSignalement = () => {
       <h2>📢 Nouveau signalement citoyen</h2>
       
       <div style={styles.form}>
-        {/* Le champ nom a été supprimé */}
+        <div style={styles.groupe}>
+          <label>Votre nom *</label>
+          <input
+            type="text"
+            name="citoyenNom"
+            value={formData.citoyenNom}
+            onChange={handleChange}
+            placeholder="Entrez votre nom"
+            style={styles.input}
+          />
+        </div>
 
         <div style={styles.groupe}>
           <label>Type de problème *</label>
@@ -176,11 +186,12 @@ const FormulaireSignalement = () => {
           />
         </div>
 
+        {/* === INTÉGRATION VERIFICATION DOUBLON === */}
         {coordonnees && (
           <VerificationDoublon
             coordonnees={coordonnees}
             typeProbleme={formData.typeProbleme}
-            onDoublonTrouve={() => {
+            onDoublonTrouve={(signalementExistant) => {
               setPeutEnvoyer(false)
               setMessage(`⚠️ Un signalement existe déjà à cet endroit. Utilisez +1 pour soutenir.`)
             }}
@@ -197,6 +208,7 @@ const FormulaireSignalement = () => {
           </div>
         )}
 
+        {/* Bouton d'envoi modifié */}
         <button
           onClick={envoyerSignalement}
           disabled={loading || !peutEnvoyer || !coordonnees}

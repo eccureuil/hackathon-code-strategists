@@ -8,26 +8,29 @@ const upload = multer({ dest: 'uploads/' }) // pour la photo
 // POST /api/signalements - Créer un signalement
 router.post('/', upload.single('photo'), async (req, res) => {
   try {
-    const { citoyenNom, typeProbleme, description, solutionProposee, lat, lng, adresse } = req.body
+  // On ne prend plus citoyenNom ni citoyenId depuis le body
+  const { typeProbleme, description, solutionProposee, lat, lng, adresse } = req.body;
 
-    const nouveau = new Signalement({
-      citoyenNom,
-      typeProbleme,
-      description,
-      solutionProposee,
-      photo: req.file ? req.file.path : null,
-      localisation: {
-        coordonnes: [parseFloat(lng), parseFloat(lat)],
-        adresseTexte: adresse || null
-      }
-    })
+  // Récupération automatique de l'ID de l'utilisateur connecté
+  const citoyenId = req.user.id;   // ou req.user._id selon votre implémentation
 
-    await nouveau.save()
-    res.status(201).json({ success: true, signalement: nouveau })
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ success: false, message: error.message })
-  }
+  const nouveau = new Signalement({
+    citoyenId,                      // ← ID auto-rempli
+    typeProbleme,
+    description,
+    solutionProposee,
+    photo: req.file ? req.file.path : null,
+    localisation: {
+      coordonnes: [parseFloat(lng), parseFloat(lat)],   // [longitude, latitude]
+      adresseTexte: adresse || null
+    }
+  });
+
+  await nouveau.save();
+  res.status(201).json(nouveau);
+} catch (error) {
+  res.status(500).json({ message: error.message });
+}
 })
 
 // GET /api/signalements/mes-signalements?nom=XXX

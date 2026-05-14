@@ -11,7 +11,7 @@ const AdminDashboard = () => {
 
   const chargerSignalements = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/signalements/tous')
+      const res = await axios.get('http://localhost:5050/api/signalements/tous')
       setSignalements(res.data)
     } catch (error) {
       console.error(error)

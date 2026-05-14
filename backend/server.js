@@ -2,7 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import mongoose from 'mongoose'
 import dotenv from 'dotenv'
-import signalementRoutes from './src/routes/signalements.js'
+import signalementRoutes from './routes/signalements.js'
 
 dotenv.config()
 

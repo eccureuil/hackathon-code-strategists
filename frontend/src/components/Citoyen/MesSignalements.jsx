@@ -13,7 +13,7 @@ const MesSignalements = ({ citoyenNom }) => {
     if (!citoyenNom) return
 
     try {
-      const response = await axios.get(`http://localhost:5000/api/signalements/mes-signalements?nom=${encodeURIComponent(citoyenNom)}`)
+      const response = await axios.get(`http://localhost:5050/api/signalements/mes-signalements?nom=${encodeURIComponent(citoyenNom)}`)
       const anciensSignalements = signalements
       const nouveauxSignalements = response.data
 
