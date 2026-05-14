@@ -1,6 +1,5 @@
 import Badge from "./ui/Badge";
-
-const API_BASE = "http://localhost:5050";
+import { API_BASE } from "../services/api";
 
 export default function PlaceCard({ place, onClick }) {
   const heroImage = place.photos?.length > 0 ? `${API_BASE}/${place.photos[0]}` : null;

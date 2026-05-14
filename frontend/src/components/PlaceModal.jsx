@@ -3,8 +3,7 @@ import Modal from "./ui/Modal";
 import Badge from "./ui/Badge";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import L from "leaflet";
-
-const API_BASE = "http://localhost:5050";
+import { API_BASE } from "../services/api";
 
 const detailIcon = L.divIcon({
   className: "custom-marker-icon",

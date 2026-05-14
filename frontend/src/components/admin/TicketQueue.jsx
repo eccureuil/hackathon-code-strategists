@@ -29,7 +29,7 @@ export const TicketQueue = ({ tickets, onMarkAbsent, onMarkCompleted }) => {
 
   const getStatusBadge = (status, isLate) => {
     if (isLate && status === "pending") {
-      return { className: "bg-red-100 text-red-800", label: "⏰ En retard" };
+      return { className: "bg-red-100 text-red-800", label: "En retard" };
     }
     const badges = {
       pending: "bg-yellow-100 text-yellow-800",
@@ -38,10 +38,10 @@ export const TicketQueue = ({ tickets, onMarkAbsent, onMarkCompleted }) => {
       absent: "bg-red-100 text-red-800",
     };
     const labels = {
-      pending: "⏳ En attente",
-      waiting: "🔄 En cours",
-      completed: "✅ Terminé",
-      absent: "❌ Absent",
+      pending: "En attente",
+      waiting: "En cours",
+      completed: "Terminé",
+      absent: "Absent",
     };
     return { className: badges[status] || "bg-gray-100", label: labels[status] || status };
   };
@@ -134,8 +134,9 @@ export const TicketQueue = ({ tickets, onMarkAbsent, onMarkCompleted }) => {
                       {ticket.citizenPhone || "Non renseigné"}
                     </div>
                     {delay?.isLate && (
-                      <span className="text-red-500 text-xs font-medium bg-red-50 px-2 py-0.5 rounded-full">
-                        ⚠️ Retard {delay.minutes} min
+                      <span className="text-red-500 text-xs font-medium bg-red-50 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                        Retard {delay.minutes} min
                       </span>
                     )}
                   </div>
@@ -153,15 +154,20 @@ export const TicketQueue = ({ tickets, onMarkAbsent, onMarkCompleted }) => {
                       {ticket.service} • {ticket.duration} min
                     </span>
                     {ticket.responsible && (
-                      <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">
-                        👨‍💼 {ticket.responsible}
+                      <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                        {ticket.responsible}
                       </span>
                     )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${badge.className}`}>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1 ${badge.className}`}>
+                    {ticket.status === "completed" && <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                    {ticket.status === "absent" && <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                    {(ticket.status === "pending" || (badge.label === "En retard")) && <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                    {ticket.status === "waiting" && <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
                     {badge.label}
                   </span>
                   <div className="flex gap-2">
@@ -170,24 +176,27 @@ export const TicketQueue = ({ tickets, onMarkAbsent, onMarkCompleted }) => {
                         
                         <button
                           onClick={() => setConfirmAction({ show: true, ticketId: ticket.id, action: "complete" })}
-                          className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition"
+                          className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition inline-flex items-center gap-1"
                         >
-                          ✅ Terminer
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          Terminer
                         </button>
                         <button
                           onClick={() => setConfirmAction({ show: true, ticketId: ticket.id, action: "absent" })}
-                          className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition"
+                          className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition inline-flex items-center gap-1"
                         >
-                          ❌ Absent
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          Absent
                         </button>
                       </>
                     )}
                     {ticket.status === "waiting" && (
                       <button
                         onClick={() => setConfirmAction({ show: true, ticketId: ticket.id, action: "complete" })}
-                        className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition"
+                        className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition inline-flex items-center gap-1"
                       >
-                        ✅ Terminer
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Terminer
                       </button>
                     )}
                   </div>
@@ -199,7 +208,8 @@ export const TicketQueue = ({ tickets, onMarkAbsent, onMarkCompleted }) => {
 
         {filteredTickets.length === 0 && (
           <div className="p-8 text-center text-gray-400">
-            📭 Aucun ticket dans cette catégorie
+            <svg className="w-8 h-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
+            Aucun ticket dans cette catégorie
           </div>
         )}
       </div>

@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
 import API from "../../services/api";
-import Navbar from "../../components/layout/Navbar";
 import PlaceCard from "../../components/PlaceCard";
 import PlaceModal from "../../components/PlaceModal";
 import Map from "../../components/Map";
@@ -46,9 +45,7 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Navbar />
-
+    <div className="space-y-6">
       {/* Hero */}
       <div className="bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-500 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">

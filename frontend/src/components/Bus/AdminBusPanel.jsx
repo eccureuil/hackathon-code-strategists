@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { busAPI, stopsAPI } from "../../services/api";
 import Button from "../ui/Button";
 import Modal from "../ui/Modal";
@@ -6,8 +6,58 @@ import Input from "../ui/Input";
 import { RouteBadge } from "../ui/Badge";
 import { LineCardSkeleton, StatCardSkeleton } from "../ui/Skeleton";
 import { showToast } from "../ui/Toast";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 const ROUTE_COLORS = ["blue", "indigo", "emerald", "amber", "red", "purple", "cyan", "pink"];
+
+const FIANAR_CENTER = [-21.4527, 47.0878];
+
+const stopMarkerIcon = L.divIcon({
+  className: "custom-marker-icon",
+  html: `
+    <div style="
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    ">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+      </svg>
+    </div>
+  `,
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+});
+
+function MapClickHandler({ editingStop, stopForm, setEditingStop, setStopForm }) {
+  useMapEvents({
+    click(e) {
+      const { lat, lng } = e.latlng;
+      if (editingStop) {
+        setEditingStop({ ...editingStop, coordinates: { lat: parseFloat(lat.toFixed(6)), lng: parseFloat(lng.toFixed(6)) } });
+      } else {
+        setStopForm({ ...stopForm, lat: lat.toFixed(6), lng: lng.toFixed(6) });
+      }
+    },
+  });
+  return null;
+}
+
+function LocationMarker({ editingStop, stopForm }) {
+  const pos = editingStop
+    ? (editingStop.coordinates?.lat != null ? [editingStop.coordinates.lat, editingStop.coordinates.lng] : null)
+    : (stopForm.lat ? [parseFloat(stopForm.lat), parseFloat(stopForm.lng)] : null);
+
+  if (!pos) return null;
+  return <Marker position={pos} icon={stopMarkerIcon} />;
+}
 
 function StatCard({ icon, label, value, color = "blue" }) {
   const gradients = {
@@ -389,7 +439,7 @@ export default function AdminBusPanel() {
             <h3 className="text-sm font-semibold text-slate-700 mb-4">
               {editingStop ? "Modifier l'arrêt" : "Ajouter un arrêt"}
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <div className="space-y-3 mb-4">
               <Input
                 label="Nom de l'arrêt"
                 value={editingStop ? editingStop.name : stopForm.name}
@@ -398,26 +448,34 @@ export default function AdminBusPanel() {
                   : setStopForm({...stopForm, name: e.target.value})
                 }
               />
-              <Input
-                label="Latitude"
-                type="number"
-                step="any"
-                value={editingStop ? editingStop.coordinates?.lat : stopForm.lat}
-                onChange={(e) => editingStop
-                  ? setEditingStop({...editingStop, coordinates: {...editingStop.coordinates, lat: parseFloat(e.target.value)}})
-                  : setStopForm({...stopForm, lat: e.target.value})
-                }
-              />
-              <Input
-                label="Longitude"
-                type="number"
-                step="any"
-                value={editingStop ? editingStop.coordinates?.lng : stopForm.lng}
-                onChange={(e) => editingStop
-                  ? setEditingStop({...editingStop, coordinates: {...editingStop.coordinates, lng: parseFloat(e.target.value)}})
-                  : setStopForm({...stopForm, lng: e.target.value})
-                }
-              />
+              <div>
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-2">
+                  Positionner sur la carte
+                </label>
+                <div className="h-56 rounded-xl overflow-hidden border border-slate-200">
+                  <MapContainer
+                    key={editingStop?._id || "new"}
+                    center={editingStop?.coordinates?.lat != null
+                      ? [editingStop.coordinates.lat, editingStop.coordinates.lng]
+                      : FIANAR_CENTER}
+                    zoom={editingStop ? 15 : 13}
+                    className="h-full w-full"
+                    scrollWheelZoom={true}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <MapClickHandler editingStop={editingStop} stopForm={stopForm} setEditingStop={setEditingStop} setStopForm={setStopForm} />
+                    <LocationMarker editingStop={editingStop} stopForm={stopForm} />
+                  </MapContainer>
+                </div>
+                <div className="flex items-center gap-4 mt-2 text-xs text-slate-400 font-mono">
+                  <span>Lat: {editingStop ? editingStop.coordinates?.lat?.toFixed(4) || "—" : stopForm.lat || "—"}</span>
+                  <span>Lng: {editingStop ? editingStop.coordinates?.lng?.toFixed(4) || "—" : stopForm.lng || "—"}</span>
+                  <span className="text-slate-300">(cliquez sur la carte)</span>
+                </div>
+              </div>
             </div>
             <div className="flex gap-2">
               <Button variant="primary" size="sm" onClick={editingStop ? handleUpdateStop : handleAddStop}>

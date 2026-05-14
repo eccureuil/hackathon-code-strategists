@@ -1,5 +1,5 @@
-// frontend/src/components/Citoyen/CalendarSelector.jsx
 import { useState, useEffect } from "react";
+import { API_BASE } from "../../services/api";
 
 export const CalendarSelector = ({ service, onSelect, bookedSlots = [] }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -41,7 +41,7 @@ export const CalendarSelector = ({ service, onSelect, bookedSlots = [] }) => {
     setLoading(true);
     try {
       const dateStr = date.toISOString().split("T")[0];
-      const response = await fetch(`http://localhost:3000/api/reservations/slots/${dateStr}`);
+      const response = await fetch(`${API_BASE}/api/reservations/slots/${dateStr}`);
       const data = await response.json();
       setAvailableTimes(data.available || []);
     } catch (error) {
@@ -136,13 +136,13 @@ export const CalendarSelector = ({ service, onSelect, bookedSlots = [] }) => {
       {selectedDate && (
         <div>
           <label className="block text-white/80 mb-3 text-sm font-medium">
-            ⏰ Créneaux disponibles pour le {selectedDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+            <svg className="w-4 h-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> Créneaux disponibles pour le {selectedDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
           </label>
           {loading ? (
             <div className="text-center py-4 text-white/50">Chargement des créneaux...</div>
           ) : availableTimes.length === 0 ? (
             <div className="text-center py-4 text-yellow-400 bg-yellow-400/10 rounded-lg">
-              ⚠️ Aucun créneau disponible pour cette date
+              <svg className="w-4 h-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg> Aucun créneau disponible pour cette date
             </div>
           ) : (
             <div className="grid grid-cols-4 md:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-2 bg-white/5 rounded-xl">
@@ -176,7 +176,7 @@ export const CalendarSelector = ({ service, onSelect, bookedSlots = [] }) => {
 
       {!selectedDate && (
         <div className="text-center text-white/40 text-sm py-4">
-          📅 Sélectionnez une date dans le calendrier
+          <svg className="w-4 h-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> Sélectionnez une date dans le calendrier
         </div>
       )}
     </div>

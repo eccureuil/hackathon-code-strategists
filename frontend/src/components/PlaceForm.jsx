@@ -1,5 +1,5 @@
 import { useState } from "react";
-import API from "../services/api";
+import API, { API_BASE } from "../services/api";
 import { useToast } from "../hooks/useToast";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
@@ -266,7 +266,7 @@ export default function PlaceForm({ refresh, editing, setEditing }) {
               {editing.photos.map((photo, i) => (
                 <img
                   key={i}
-                  src={`http://localhost:5050/${photo}`}
+                  src={`${API_BASE}/${photo}`}
                   alt=""
                   className="w-20 h-20 object-cover rounded-lg border border-slate-200 shrink-0"
                 />

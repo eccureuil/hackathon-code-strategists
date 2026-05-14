@@ -10,15 +10,15 @@ const ticketSchema = new mongoose.Schema({
   date: { type: String, required: true },
   time: { type: String, required: true },
   motif: { type: String, required: true },
-  status: { 
-    type: String, 
-    enum: ["confirmed", "cancelled", "completed", "absent"],
-    default: "confirmed" 
+  status: {
+    type: String,
+    enum: ["confirmed", "cancelled", "completed", "absent", "waiting", "processing"],
+    default: "confirmed",
   },
   responsibleName: { type: String, default: "À assigner" },
   counter: { type: String, default: "Guichet 1" },
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  updatedAt: { type: Date, default: Date.now },
 });
 
 export const Ticket = mongoose.model("Ticket", ticketSchema);

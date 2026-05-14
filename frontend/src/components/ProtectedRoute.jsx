@@ -1,25 +1,15 @@
 import { Navigate } from "react-router-dom";
+import useAuth from "../hooks/useAuth";
 
-function parseToken(token) {
-  try {
-    const payload = token.split(".")[1];
-    return JSON.parse(atob(payload));
-  } catch {
-    return null;
-  }
-}
+export default function ProtectedRoute({ children, requireAdmin = false }) {
+  const { isAuthenticated, isAdmin } = useAuth();
 
-export default function ProtectedRoute({ children }) {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  const decoded = parseToken(token);
-
-  if (!decoded || decoded.role !== "admin") {
-    return <Navigate to="/home" replace />;
+  if (requireAdmin && !isAdmin) {
+    return <Navigate to="/" replace />;
   }
 
   return children;

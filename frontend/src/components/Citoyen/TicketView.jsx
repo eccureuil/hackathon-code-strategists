@@ -25,7 +25,7 @@ export const TicketView = ({ ticket, onCancel, onAcceptOffer, pendingOffer }) =>
       {pendingOffer && (
         <div className="bg-yellow-50 border border-yellow-400 rounded-xl p-4 animate-pulse">
           <div className="flex items-start gap-3">
-            <span className="text-2xl">⏰</span>
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <div className="flex-1">
               <p className="font-semibold text-yellow-800">
                 Un créneau s'est libéré !
@@ -39,7 +39,8 @@ export const TicketView = ({ ticket, onCancel, onAcceptOffer, pendingOffer }) =>
                   onClick={() => onAcceptOffer(pendingOffer)}
                   className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600"
                 >
-                  ✅ Accepter et avancer
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Accepter et avancer
                 </button>
                 <button
                   onClick={() => onAcceptOffer(null, false)}
@@ -131,7 +132,7 @@ export const TicketView = ({ ticket, onCancel, onAcceptOffer, pendingOffer }) =>
           {/* Rappel */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
             <p className="text-amber-800 text-sm">
-              ⚠️ Veuillez vous présenter au guichet{" "}
+              <svg className="w-4 h-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg> Veuillez vous présenter au guichet{" "}
               <span className="font-bold">15 minutes avant</span> votre rendez-vous
             </p>
           </div>
@@ -150,13 +151,15 @@ export const TicketView = ({ ticket, onCancel, onAcceptOffer, pendingOffer }) =>
           onClick={downloadTicket}
           className="flex-1 px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2"
         >
-          📥 Télécharger
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+          Télécharger
         </button>
         <button
           onClick={onCancel}
           className="flex-1 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition flex items-center justify-center gap-2"
         >
-          ❌ Annuler
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          Annuler
         </button>
       </div>
     </div>

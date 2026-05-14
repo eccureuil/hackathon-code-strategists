@@ -1,13 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
-import API from "../../services/api";
-import { useToast } from "../../hooks/useToast";
-import Navbar from "../../components/layout/Navbar";
+import API, { API_BASE } from "../../services/api";
+import { showToast } from "../../components/ui/Toast";
 import PlaceForm from "../../components/PlaceForm";
 import Modal from "../../components/ui/Modal";
 import Button from "../../components/ui/Button";
-import Badge from "../../components/ui/Badge";
-
-const API_BASE = "http://localhost:5050";
+import { CategoryBadge } from "../../components/ui/Badge";
 
 export default function AdminPlaces() {
   const [places, setPlaces] = useState([]);
@@ -15,7 +12,7 @@ export default function AdminPlaces() {
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const addToast = useToast();
+  const addToast = showToast;
 
   const fetchPlaces = async () => {
     try {
@@ -71,10 +68,7 @@ export default function AdminPlaces() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Navbar />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -197,7 +191,6 @@ export default function AdminPlaces() {
             </table>
           </div>
         </div>
-      </div>
 
       {/* Create/Edit Modal */}
       <Modal open={showForm} onClose={() => { setShowForm(false); setEditing(null); }} className="max-w-2xl">

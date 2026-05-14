@@ -21,25 +21,25 @@ export const authAPI = {
 };
 
 export const stopsAPI = {
-  getAll: () => API.get("/bus/stops"),
-  getById: (id) => API.get(`/bus/stops/${id}`),
-  create: (data) => API.post("/bus/stops", data),
-  update: (id, data) => API.put(`/bus/stops/${id}`, data),
-  delete: (id) => API.delete(`/bus/stops/${id}`),
+  getAll: () => API.get("/stops"),
+  getById: (id) => API.get(`/stops/${id}`),
+  create: (data) => API.post("/stops", data),
+  update: (id, data) => API.put(`/stops/${id}`, data),
+  delete: (id) => API.delete(`/stops/${id}`),
 };
 
 export const busAPI = {
-  getAll: () => API.get("/bus"),
-  getById: (id) => API.get(`/bus/${id}`),
-  create: (data) => API.post("/bus", data),
-  update: (id, data) => API.put(`/bus/${id}`, data),
-  delete: (id) => API.delete(`/bus/${id}`),
-  getAllLines: () => API.get("/bus/lines"),
-  searchRoute: (params) => API.post("/bus/search", params),
-  searchLine: (query) => API.get(`/bus/lines/search?q=${query}`),
-  getDetails: (id) => API.get(`/bus/lines/${id}/details`),
-  exportData: () => API.get("/bus/export"),
-  importData: (data) => API.post("/bus/import", data),
+  getAll: () => API.get("/buses"),
+  getById: (id) => API.get(`/buses/${id}`),
+  create: (data) => API.post("/buses", data),
+  update: (id, data) => API.put(`/buses/${id}`, data),
+  delete: (id) => API.delete(`/buses/${id}`),
+  getAllLines: () => API.get("/buses/lines"),
+  searchRoute: (params) => API.post("/buses/search", params),
+  searchLine: (query) => API.get(`/buses/lines/search?q=${query}`),
+  getDetails: (id) => API.get(`/buses/lines/${id}/details`),
+  exportData: () => API.get("/buses/export"),
+  importData: (data) => API.post("/buses/import", data),
 };
 
 export default API;

@@ -43,13 +43,13 @@ export const ResponsibleManager = ({
   };
 
   const getStatusLabel = (status) => {
-    return status === "active" ? "🟢 Actif" : "🔴 Inactif";
+    return status === "active" ? "Actif" : "Inactif";
   };
 
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-800">👨‍💼 Gestion des responsables</h3>
+        <h3 className="font-semibold text-gray-800"><svg className="w-4 h-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> Gestion des responsables</h3>
         <p className="text-sm text-gray-500">
           Gérez les guichets et responsables par service
         </p>
@@ -106,21 +106,27 @@ export const ResponsibleManager = ({
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-600">{resp.counter}</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(resp.status)}`}>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1.5 ${getStatusColor(resp.status)}`}>
+                    {resp.status === "active" ? (
+                      <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+                    ) : (
+                      <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+                    )}
                     {getStatusLabel(resp.status)}
-
                   </span>
                   <button
   onClick={() => onDelete(resp._id)}
-  className="text-red-500 hover:text-red-700 text-sm"
+  className="text-red-500 hover:text-red-700 text-sm inline-flex items-center gap-1"
 >
-  🗑️ Supprimer
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+  Supprimer
 </button>
                   <button
                     onClick={() => handleEdit(resp)}
-                    className="text-blue-500 hover:text-blue-700 text-sm"
+                    className="text-blue-500 hover:text-blue-700 text-sm inline-flex items-center gap-1"
                   >
-                    ✏️ Modifier
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    Modifier
                   </button>
                 </div>
               </div>
@@ -172,8 +178,9 @@ export const ResponsibleManager = ({
             className="w-full p-2 border rounded-lg"
           />
           <div className="flex gap-2">
-            <button onClick={handleAdd} className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm">
-              ✅ Ajouter
+            <button onClick={handleAdd} className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm inline-flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Ajouter
             </button>
             <button onClick={() => setShowAddForm(false)} className="px-4 py-2 bg-gray-300 rounded-lg text-sm">
               Annuler
