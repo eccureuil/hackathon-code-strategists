@@ -12,17 +12,25 @@ export default function Login() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      const res = await API.post("/users/login", form);
-      localStorage.setItem("token", res.data.token);
-      alert("Connexion réussie 🚀");
-    } catch (err) {
-      alert(err.response?.data?.message || "Erreur login");
+ // Dans Login.jsx, modifiez la fonction handleSubmit
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await API.post("/auth/login", form);
+    localStorage.setItem("token", response.data.token)
+    // Appeler le callback du parent
+    props.onLogin(response.data.user, response.data.token);
+    
+    // Redirection selon le rôle
+    if (response.data.user.role === "admin") {
+      window.location.href = "/admin";
+    } else {
+      window.location.href = "/client";
     }
-  };
+  } catch (err) {
+    alert(err.response?.data?.message || "Erreur de connexion");
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-700 px-4">
