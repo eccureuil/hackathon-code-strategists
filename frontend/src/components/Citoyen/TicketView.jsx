@@ -1,4 +1,4 @@
-// frontend/src/components/citoyen/TicketView.jsx
+// frontend/src/components/Citoyen/TicketView.jsx
 import { useRef } from "react";
 import QRCode from "qrcode.react";
 
@@ -14,14 +14,9 @@ export const TicketView = ({ ticket, onCancel, onAcceptOffer, pendingOffer }) =>
     });
   };
 
-  const formatTime = (time) => {
-    return time;
-  };
-
   const downloadTicket = () => {
-    // Fonction pour télécharger le ticket en image
-    const element = ticketRef.current;
-    // Implémentation avec html2canvas si besoin
+    // Pour télécharger en image, il faudrait html2canvas
+    alert("Fonctionnalité de téléchargement à implémenter");
   };
 
   return (
@@ -63,7 +58,7 @@ export const TicketView = ({ ticket, onCancel, onAcceptOffer, pendingOffer }) =>
         ref={ticketRef}
         className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100"
       >
-        {/* Header avec dégradé */}
+        {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
           <div className="flex justify-between items-center text-white">
             <div>
@@ -72,7 +67,7 @@ export const TicketView = ({ ticket, onCancel, onAcceptOffer, pendingOffer }) =>
             </div>
             <div className="text-right">
               <div className="text-xs opacity-80">N°</div>
-              <div className="text-2xl font-mono font-bold">{ticket.number}</div>
+              <div className="text-2xl font-mono font-bold">{ticket?.number}</div>
             </div>
           </div>
         </div>
@@ -84,12 +79,12 @@ export const TicketView = ({ ticket, onCancel, onAcceptOffer, pendingOffer }) =>
             <div className="bg-white p-3 rounded-xl shadow-md">
               <QRCode
                 value={JSON.stringify({
-                  id: ticket.id,
-                  number: ticket.number,
-                  citizen: ticket.citizenName,
-                  service: ticket.serviceName,
-                  date: ticket.date,
-                  time: ticket.time,
+                  id: ticket?.id,
+                  number: ticket?.number,
+                  citizen: ticket?.citizenName,
+                  service: ticket?.serviceName,
+                  date: ticket?.date,
+                  time: ticket?.time,
                 })}
                 size={120}
                 level="H"
@@ -101,39 +96,35 @@ export const TicketView = ({ ticket, onCancel, onAcceptOffer, pendingOffer }) =>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <div className="text-gray-500 text-xs">Citoyen</div>
-              <div className="font-medium">{ticket.citizenName}</div>
+              <div className="font-medium">{ticket?.citizenName}</div>
             </div>
             <div>
               <div className="text-gray-500 text-xs">Service</div>
-              <div className="font-medium">{ticket.serviceName}</div>
+              <div className="font-medium">{ticket?.serviceName}</div>
             </div>
             <div>
               <div className="text-gray-500 text-xs">Responsable</div>
-              <div className="font-medium">
-                {ticket.responsibleName || "À assigner"}
-              </div>
+              <div className="font-medium">{ticket?.responsibleName || "À assigner"}</div>
             </div>
             <div>
               <div className="text-gray-500 text-xs">Guichet</div>
-              <div className="font-medium">{ticket.counter || "—"}</div>
+              <div className="font-medium">{ticket?.counter || "—"}</div>
             </div>
             <div className="col-span-2">
               <div className="text-gray-500 text-xs">Date</div>
-              <div className="font-medium">{formatDate(ticket.date)}</div>
+              <div className="font-medium">{formatDate(ticket?.date)}</div>
             </div>
             <div>
               <div className="text-gray-500 text-xs">Heure</div>
-              <div className="text-xl font-bold text-blue-600">
-                {formatTime(ticket.time)}
-              </div>
+              <div className="text-xl font-bold text-blue-600">{ticket?.time}</div>
             </div>
             <div>
               <div className="text-gray-500 text-xs">Durée estimée</div>
-              <div className="font-medium">{ticket.duration} minutes</div>
+              <div className="font-medium">{ticket?.duration} minutes</div>
             </div>
             <div className="col-span-2">
               <div className="text-gray-500 text-xs">Motif</div>
-              <div className="text-sm">{ticket.motif}</div>
+              <div className="text-sm">{ticket?.motif}</div>
             </div>
           </div>
 

@@ -1,6 +1,5 @@
-// frontend/src/pages/CitoyenPage.jsx
-// frontend/src/pages/CitoyenPage.jsx
-import { useState, useEffect, lazy } from "react";
+
+import { useState, useEffect } from "react";
 import { ReservationForm } from "../components/Citoyen/ReservationForm";  // ← Citoyen avec C majuscule
 import { TicketView } from "../components/Citoyen/TicketView";            // ← Citoyen avec C majuscule
 import { Toast } from "../components/common/Toast";

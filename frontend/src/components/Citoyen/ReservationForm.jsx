@@ -1,5 +1,5 @@
-// frontend/src/components/citoyen/ReservationForm.jsx
-import { useState } from "react";
+// frontend/src/components/Citoyen/ReservationForm.jsx
+import { useState, lazy } from "react";  // ← AJOUTE lazy ici !
 
 export const ReservationForm = ({
   user,
@@ -72,6 +72,7 @@ export const ReservationForm = ({
     );
   }
 
+  // lazy est maintenant disponible !
   const CalendarSelector = lazy(() => import("./CalendarSelector"));
 
   return (
@@ -96,12 +97,14 @@ export const ReservationForm = ({
         </button>
       </div>
 
-      {/* Calendrier */}
-      <CalendarSelector
-        service={selectedService}
-        onSelect={handleDateTimeSelect}
-        bookedSlots={bookedSlots}
-      />
+      {/* Calendrier - Attention: lazy loading nécessite Suspense */}
+      <React.Suspense fallback={<div className="text-center py-8">Chargement du calendrier...</div>}>
+        <CalendarSelector
+          service={selectedService}
+          onSelect={handleDateTimeSelect}
+          bookedSlots={bookedSlots}
+        />
+      </React.Suspense>
 
       {/* Motif */}
       <div>
