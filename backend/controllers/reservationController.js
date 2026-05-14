@@ -1,20 +1,18 @@
 import { Ticket } from "../models/Ticket.js";
+import { Notification } from "../models/Notification.js";
 
-// Créer une réservation
+/* ================= CREATE ================= */
 export const createReservation = async (req, res) => {
   try {
     const { serviceId, serviceName, date, time, motif, citizenName, citizenPhone, citizenEmail } = req.body;
-    
-    // Vérifier si le créneau est déjà pris
-    const existingTicket = await Ticket.findOne({ date, time, status: "confirmed" });
-    if (existingTicket) {
-      return res.status(400).json({ error: "Ce créneau est déjà réservé" });
+
+    const existing = await Ticket.findOne({ date, time, status: "confirmed" });
+    if (existing) {
+      return res.status(400).json({ error: "Créneau déjà réservé" });
     }
-    
-    const ticketNumber = `TKT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    
+
     const ticket = new Ticket({
-      ticketNumber,
+      ticketNumber: `TKT-${Date.now()}`,
       citizenName,
       citizenPhone,
       citizenEmail,
@@ -24,15 +22,16 @@ export const createReservation = async (req, res) => {
       time,
       motif
     });
-    
+
     await ticket.save();
+
     res.status(201).json(ticket);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Récupérer tous les tickets
+/* ================= GET ALL ================= */
 export const getAllReservations = async (req, res) => {
   try {
     const tickets = await Ticket.find().sort({ createdAt: -1 });
@@ -42,194 +41,194 @@ export const getAllReservations = async (req, res) => {
   }
 };
 
-// Récupérer un ticket par ID
+/* ================= GET BY ID ================= */
 export const getReservationById = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ error: "Ticket non trouvé" });
+    if (!ticket) return res.status(404).json({ error: "Introuvable" });
     res.json(ticket);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Récupérer les tickets par date
+/* ================= BY DATE ================= */
 export const getReservationsByDate = async (req, res) => {
   try {
-    const { date } = req.params;
-    const tickets = await Ticket.find({ date, status: "confirmed" });
+    const tickets = await Ticket.find({
+      date: req.params.date,
+      status: "confirmed"
+    });
     res.json(tickets);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Récupérer les tickets par téléphone citoyen
+/* ================= BY PHONE ================= */
 export const getReservationsByPhone = async (req, res) => {
   try {
-    const { phone } = req.params;
-    const tickets = await Ticket.find({ citizenPhone: phone }).sort({ createdAt: -1 });
+    const tickets = await Ticket.find({
+      citizenPhone: req.params.phone
+    }).sort({ createdAt: -1 });
+
     res.json(tickets);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Annuler une réservation
+/* ================= BY CITIZEN ================= */
+export const getReservationsByCitizen = async (req, res) => {
+  try {
+    const tickets = await Ticket.find({
+      citizenId: req.params.citizenId
+    });
+
+    res.json(tickets);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/* ================= CANCEL ================= */
 export const cancelReservation = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ error: "Ticket non trouvé" });
-    
     ticket.status = "cancelled";
-    ticket.updatedAt = Date.now();
     await ticket.save();
-    
     res.json(ticket);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Marquer comme complété
+/* ================= COMPLETE ================= */
 export const completeReservation = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ error: "Ticket non trouvé" });
-    
     ticket.status = "completed";
-    ticket.updatedAt = Date.now();
     await ticket.save();
-    
     res.json(ticket);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Marquer comme absent (manuel)
+/* ================= ABSENT ================= */
 export const absentReservation = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ error: "Ticket non trouvé" });
-    
     ticket.status = "absent";
-    ticket.updatedAt = Date.now();
     await ticket.save();
-    
     res.json(ticket);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Marquer comme "en cours"
+/* ================= START PROCESS ================= */
 export const startProcessing = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ error: "Ticket non trouvé" });
-    
+
     ticket.status = "waiting";
-    ticket.updatedAt = Date.now();
     await ticket.save();
-    
+
+    // 🔔 Notification CORRIGÉE
+    await Notification.create({
+      citizenId: ticket._id,
+      message: "🟢 Votre dossier est en cours de traitement",
+      type: "info"
+    });
+
     res.json(ticket);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// ⭐ NOUVEAU - Vérifier et marquer automatiquement les tickets en retard
+/* ================= AUTO ABSENT ================= */
 export const autoMarkAbsent = async (req, res) => {
   try {
     const now = new Date();
-    const currentDate = now.toISOString().split("T")[0];
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentTimeInMinutes = currentHour * 60 + currentMinute;
-    
-    // Récupérer tous les tickets du jour qui sont encore "confirmed"
-    const tickets = await Ticket.find({ 
-      date: currentDate, 
-      status: "confirmed" 
+    const today = now.toISOString().split("T")[0];
+
+    const tickets = await Ticket.find({
+      date: today,
+      status: "confirmed"
     });
-    
-    let updatedCount = 0;
-    const updatedTickets = [];
-    
-    for (const ticket of tickets) {
-      const [ticketHour, ticketMinute] = ticket.time.split(":").map(Number);
-      const ticketTimeInMinutes = ticketHour * 60 + ticketMinute;
-      const delayMinutes = currentTimeInMinutes - ticketTimeInMinutes;
-      
-      // Si retard >= 15 minutes, passer en "absent"
-      if (delayMinutes >= 15) {
-        ticket.status = "absent";
-        ticket.updatedAt = now;
-        await ticket.save();
-        updatedCount++;
-        updatedTickets.push({
-          number: ticket.ticketNumber,
-          citizen: ticket.citizenName,
-          time: ticket.time,
-          delay: delayMinutes
-        });
-        console.log(`✅ Auto-absent: ${ticket.ticketNumber} (${ticket.citizenName}) - ${delayMinutes} min de retard`);
+
+    let updated = 0;
+
+    for (const t of tickets) {
+      const [h, m] = t.time.split(":").map(Number);
+      const diff = now.getHours() * 60 + now.getMinutes() - (h * 60 + m);
+
+      if (diff >= 15) {
+        t.status = "absent";
+        await t.save();
+        updated++;
       }
     }
-    
-    res.json({ 
-      success: true, 
-      message: `${updatedCount} ticket(s) marqué(s) absent automatiquement`,
-      updatedCount,
-      updatedTickets,
-      checkedAt: now.toISOString()
-    });
+
+    res.json({ updatedCount: updated });
   } catch (error) {
-    console.error("❌ Erreur autoMarkAbsent:", error);
     res.status(500).json({ error: error.message });
   }
 };
+export const getAvailableSlots = async (req, res) => {
+  try {
+    const { date } = req.params;
 
-// Statistiques du jour
+    const tickets = await Ticket.find({
+      date,
+      status: "confirmed"
+    });
+
+    const booked = tickets.map(t => t.time);
+
+    const slots = [];
+
+    for (let h = 8; h < 17; h++) {
+      slots.push(`${h}:00`);
+      slots.push(`${h}:15`);
+      slots.push(`${h}:30`);
+      slots.push(`${h}:45`);
+    }
+
+    const available = slots.filter(s => !booked.includes(s));
+
+    res.json({
+      date,
+      available,
+      booked
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 export const getDailyStats = async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
-    
+
     const total = await Ticket.countDocuments({ date: today });
     const confirmed = await Ticket.countDocuments({ date: today, status: "confirmed" });
     const completed = await Ticket.countDocuments({ date: today, status: "completed" });
     const cancelled = await Ticket.countDocuments({ date: today, status: "cancelled" });
     const absent = await Ticket.countDocuments({ date: today, status: "absent" });
-    
-    res.json({ 
-      date: today, 
-      total, 
-      confirmed, 
-      completed, 
-      cancelled, 
-      absent,
-      available: 45 - total
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
 
-// Créneaux disponibles par date
-export const getAvailableSlots = async (req, res) => {
-  try {
-    const { date } = req.params;
-    const tickets = await Ticket.find({ date, status: "confirmed" });
-    const bookedTimes = tickets.map(t => t.time);
-    
-    const allSlots = [];
-    for (let h = 8; h < 17; h++) {
-      allSlots.push(`${h}:00`, `${h}:15`, `${h}:30`, `${h}:45`);
-    }
-    
-    const availableSlots = allSlots.filter(slot => !bookedTimes.includes(slot));
-    res.json({ date, available: availableSlots, booked: bookedTimes });
+    res.json({
+      date: today,
+      total,
+      confirmed,
+      completed,
+      cancelled,
+      absent,
+      available: Math.max(0, 45 - total)
+    });
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

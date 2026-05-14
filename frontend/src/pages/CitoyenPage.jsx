@@ -1,202 +1,144 @@
-// frontend/src/pages/CitoyenPage.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ReservationForm } from "../components/Citoyen/ReservationForm";
 import { TicketView } from "../components/Citoyen/TicketView";
 import { Toast } from "../components/common/Toast";
-import { LoadingSpinner } from "../components/common/LoadingSpinner";
 
 export const CitoyenPage = ({ user }) => {
-  const [activeTicket, setActiveTicket] = useState(null);
-  const [hasReservation, setHasReservation] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState(null);
-  const [showProfile, setShowProfile] = useState(false);
- const [services] = useState([
-  { id: 1, name: "Acte de naissance", duration: 15, icon: "👶", color: "pink", description: "Premier acte d'état civil" },
-  { id: 2, name: "Acte de mariage", duration: 20, icon: "💍", color: "purple", description: "Mariage civil" },
-  { id: 3, name: "Certificat de résidence", duration: 20, icon: "🏠", color: "emerald", description: "Justificatif de domicile" },
-  { id: 4, name: "Carte d'identité", duration: 25, icon: "🆔", color: "blue", description: "CNI nouvelle génération" },
-  { id: 5, name: "Légalisation signature", duration: 10, icon: "✍️", color: "amber", description: "Authentification de document" },
-  { id: 6, name: "Passeport", duration: 30, icon: "🛂", color: "red", description: "Passeport biométrique" },
-]);
-  const [bookedSlots] = useState([]);
+  const [tab, setTab] = useState("reserve");
 
-  const showToast = (message, type = "info") => {
-    setToast({ message, type });
+  const [services, setServices] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+
+  const [activeTicket, setActiveTicket] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  // 🔄 LOAD SERVICES FROM BACKEND
+  useEffect(() => {
+    fetch("http://localhost:3000/api/services")
+      .then(res => res.json())
+      .then(setServices);
+  }, []);
+
+  // 🔄 LOAD USER TICKETS
+  useEffect(() => {
+    if (!user?.phone) return;
+
+    fetch(`http://localhost:3000/api/reservations/citizen/phone/${user.phone}`)
+      .then(res => res.json())
+      .then(setTickets);
+  }, [user]);
+
+  // 🔄 LOAD NOTIFICATIONS
+  useEffect(() => {
+    if (!user?.id) return;
+
+    fetch(`http://localhost:3000/api/notifications/${user.id}`)
+      .then(res => res.json())
+      .then(setNotifications);
+  }, [user]);
+
+  const showToast = (msg, type = "info") => {
+    setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
 
- const handleReservation = async (formData) => {
-  setLoading(true);
-  
-  try {
-    // Appel API vers backend
-    const response = await fetch("http://localhost:3000/api/reservations", {
+  // 🎯 RESERVATION
+  const handleReservation = async (formData) => {
+    const res = await fetch("http://localhost:3000/api/reservations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        serviceId: formData.serviceId,
-        serviceName: services.find((s) => s.id === formData.serviceId)?.name,
-        date: formData.date.toISOString().split("T")[0],
-        time: formData.time,
-        motif: formData.motif,
-        citizenName: user?.name || "RAKOTO Jean",
-        citizenPhone: user?.phone || "034 12 345 67",
-        citizenEmail: user?.email || "",
-      }),
+        ...formData,
+        citizenName: user?.name,
+        citizenPhone: user?.phone
+      })
     });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      // Ticket créé avec succès dans MongoDB
-      const newTicket = {
-        id: data._id,
-        number: data.ticketNumber,
-        citizenName: data.citizenName,
-        serviceId: data.serviceId,
-        serviceName: data.serviceName,
-        date: data.date,
-        time: data.time,
-        duration: services.find((s) => s.id === data.serviceId)?.duration,
-        motif: data.motif,
-        responsibleName: data.responsibleName || "Mme Rasoa",
-        counter: data.counter || "Guichet 2",
-        status: data.status,
-      };
-      setActiveTicket(newTicket);
-      setHasReservation(true);
-      showToast("✅ Réservation confirmée !", "success");
+
+    const data = await res.json();
+
+    if (res.ok) {
+      setActiveTicket(data);
+      setTab("tickets");
+      showToast("Réservation confirmée ✅", "success");
     } else {
-      showToast(data.error || "Erreur lors de la réservation", "error");
-    }
-  } catch (error) {
-    console.error("Erreur API:", error);
-    showToast("Impossible de contacter le serveur", "error");
-  } finally {
-    setLoading(false);
-  }
-};
-  const handleCancelReservation = async () => {
-    if (confirm("Voulez-vous vraiment annuler votre réservation ?")) {
-      setLoading(true);
-      setTimeout(() => {
-        setActiveTicket(null);
-        setHasReservation(false);
-        showToast("❌ Réservation annulée", "error");
-        setLoading(false);
-      }, 500);
+      showToast(data.error, "error");
     }
   };
 
-  if (loading) return <LoadingSpinner fullScreen />;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-x-hidden">
-      
-      {/* Cercles décoratifs animés */}
-      <div className="absolute top-0 -left-40 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" />
-      <div className="absolute top-0 -right-40 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-1000" />
-      <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-500" />
-      
-      {/* Header glassmorphism */}
-      <div className="sticky top-0 z-50 backdrop-blur-xl bg-white/5 border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/50 animate-bounce">
-                <span className="text-2xl">🏛️</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  Mairie de Fianarantsoa
-                </h1>
-                <p className="text-xs text-white/50">Service de réservation en ligne</p>
-              </div>
-            </div>
-            
-            <button
-              onClick={() => setShowProfile(!showProfile)}
-              className="flex items-center gap-3 bg-white/10 backdrop-blur rounded-full px-3 py-2 hover:bg-white/20 transition-all hover:scale-105"
-            >
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-sm text-white font-bold">{user?.name?.charAt(0) || "J"}</span>
-              </div>
-              <div className="text-left hidden sm:block">
-                <div className="text-sm font-medium text-white">{user?.name || "Citoyen"}</div>
-                <div className="text-xs text-white/50">{user?.phone || "034 12 345 67"}</div>
-              </div>
-            </button>
-          </div>
+    <div className="min-h-screen bg-gray-100">
+
+      {/* HEADER */}
+      <div className="flex justify-between items-center p-4 bg-white shadow">
+
+        <h1 className="font-bold text-lg">🏛️ E-Mairie</h1>
+
+        {/* NAV */}
+        <div className="flex gap-4 items-center">
+
+          <button onClick={() => setTab("reserve")}>
+            ➕ Réserver
+          </button>
+
+          <button onClick={() => setTab("tickets")}>
+            🎫 Tickets
+          </button>
+
+          {/* 🔔 NOTIF */}
+          <button onClick={() => setTab("notif")} className="relative">
+            🔔
+            {notifications.filter(n => !n.read).length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1 rounded-full">
+                {notifications.filter(n => !n.read).length}
+              </span>
+            )}
+          </button>
+
         </div>
       </div>
 
-      {/* Profile Modal avec animation */}
-      {showProfile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 animate-fade-in" onClick={() => setShowProfile(false)}>
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          <div className="relative bg-gradient-to-br from-white to-gray-100 rounded-2xl max-w-md w-full p-6 animate-slide-up shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="text-center">
-              <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto text-4xl shadow-lg animate-pulse">
-                👤
-              </div>
-              <h3 className="text-xl font-bold mt-4 text-gray-800">{user?.name || "RAKOTO Jean"}</h3>
-              <p className="text-gray-500">{user?.email || "jean.rakoto@email.com"}</p>
-              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-                <p className="text-sm"><span className="font-medium">📱 Téléphone :</span> {user?.phone || "034 12 345 67"}</p>
-                <p className="text-sm mt-1"><span className="font-medium">🆔 CIN :</span> {user?.cin || "123 456 789 012"}</p>
-              </div>
-              <button className="mt-4 w-full py-2 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-lg hover:scale-105 transition-transform">
-                Déconnexion
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* BODY */}
+      <div className="p-4">
 
-      {/* Hero Section avec animation */}
-      <div className="relative py-16 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 to-purple-600/30 animate-gradient" />
-        <div className="max-w-6xl mx-auto px-4 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur rounded-full px-4 py-2 mb-6 animate-bounce">
-            <span className="text-yellow-400 text-xl">⭐</span>
-            <span className="text-sm text-white font-medium">Service rapide et simplifié</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 animate-fade-in-up">
-            Prenez rendez-vous en
-            <span className="bg-gradient-to-r from-yellow-400 to-pink-400 bg-clip-text text-transparent"> quelques clics</span>
-          </h1>
-          <p className="text-white/70 max-w-2xl mx-auto text-lg">
-            Choisissez votre service, sélectionnez un créneau et obtenez votre ticket.
-            Plus besoin de faire la queue à la mairie !
-          </p>
-        </div>
-      </div>
-
-      {/* Contenu principal */}
-      <div className="max-w-6xl mx-auto px-4 pb-12">
-        {!hasReservation ? (
-          <div className="backdrop-blur-sm bg-white/5 rounded-2xl p-6 border border-white/10 shadow-2xl">
-            <ReservationForm
-              user={user}
-              services={services}
-              onSubmit={handleReservation}
-              bookedSlots={bookedSlots}
-              isLoading={loading}
-            />
-          </div>
-        ) : (
-          <TicketView
-            ticket={activeTicket}
-            onCancel={handleCancelReservation}
-            onAcceptOffer={null}
-            pendingOffer={null}
+        {/* RESERVATION */}
+        {tab === "reserve" && (
+          <ReservationForm
+            services={services}
+            onSubmit={handleReservation}
           />
         )}
+
+        {/* TICKETS */}
+        {tab === "tickets" && (
+          <div className="space-y-4">
+            {tickets.map(t => (
+              <TicketView key={t._id} ticket={t} />
+            ))}
+          </div>
+        )}
+
+        {/* NOTIFICATIONS */}
+        {tab === "notif" && (
+          <div className="space-y-2">
+            {notifications.length === 0 && (
+              <p>Aucune notification</p>
+            )}
+
+            {notifications.map(n => (
+              <div key={n._id} className="p-3 bg-white shadow rounded">
+                {n.message}
+              </div>
+            ))}
+          </div>
+        )}
+
       </div>
 
-      {/* Toast */}
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {/* TOAST */}
+      {toast && (
+        <Toast message={toast.msg} type={toast.type} />
+      )}
     </div>
   );
 };

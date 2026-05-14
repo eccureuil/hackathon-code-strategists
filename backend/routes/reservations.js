@@ -5,6 +5,7 @@ import {
   getReservationById,
   getReservationsByDate,
   getReservationsByPhone,
+  getReservationsByCitizen,
   cancelReservation,
   completeReservation,
   absentReservation,
@@ -16,18 +17,35 @@ import {
 
 const router = express.Router();
 
-// Routes principales
+// CREATE
 router.post("/", createReservation);
+
+// GET ALL
 router.get("/", getAllReservations);
+
+// STATS
 router.get("/stats/daily", getDailyStats);
+
+// SLOTS
 router.get("/slots/:date", getAvailableSlots);
+
+// BY DATE
 router.get("/date/:date", getReservationsByDate);
-router.get("/citizen/:phone", getReservationsByPhone);
+
+// BY CITIZEN
+router.get("/citizen/id/:citizenId", getReservationsByCitizen);
+router.get("/citizen/phone/:phone", getReservationsByPhone);
+
+// BY ID
 router.get("/:id", getReservationById);
+
+// ACTIONS
 router.put("/:id/cancel", cancelReservation);
 router.put("/:id/complete", completeReservation);
 router.put("/:id/absent", absentReservation);
 router.put("/:id/start", startProcessing);
-router.put("/auto-mark-absent", autoMarkAbsent);  // ⭐ Nouvelle route auto
+
+// AUTO ABSENT
+router.put("/auto-mark-absent", autoMarkAbsent);
 
 export default router;
