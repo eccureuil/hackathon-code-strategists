@@ -1,95 +1,168 @@
-
+// frontend/src/pages/CitoyenPage.jsx
 import { useState } from "react";
-import { CalendarSelector } from "../components/Citoyen/CalendarSelector";
+import { ReservationForm } from "../components/Citoyen/ReservationForm";
+import { TicketView } from "../components/Citoyen/TicketView";
+import { Toast } from "../components/common/Toast";
+import { LoadingSpinner } from "../components/common/LoadingSpinner";
 
+export const CitoyenPage = ({ user }) => {
+  const [activeTicket, setActiveTicket] = useState(null);
+  const [hasReservation, setHasReservation] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [showProfile, setShowProfile] = useState(false);
+  const [services] = useState([
+    { id: 1, name: "Acte de naissance", duration: 15, icon: "👶", color: "from-pink-500 to-rose-500", description: "Premier acte d'état civil" },
+    { id: 2, name: "Acte de mariage", duration: 20, icon: "💍", color: "from-purple-500 to-indigo-500", description: "Mariage civil" },
+    { id: 3, name: "Certificat de résidence", duration: 20, icon: "🏠", color: "from-emerald-500 to-teal-500", description: "Justificatif de domicile" },
+    { id: 4, name: "Carte d'identité", duration: 25, icon: "🆔", color: "from-blue-500 to-cyan-500", description: "CNI nouvelle génération" },
+    { id: 5, name: "Légalisation signature", duration: 10, icon: "✍️", color: "from-amber-500 to-orange-500", description: "Authentification de document" },
+    { id: 6, name: "Passeport", duration: 30, icon: "🛂", color: "from-red-500 to-rose-500", description: "Passeport biométrique" },
+  ]);
+  const [bookedSlots] = useState([]);
 
-export const ReservationForm = ({ services, onSubmit, bookedSlots, isLoading }) => {
-  const [step, setStep] = useState(1);
-  const [selectedService, setSelectedService] = useState(null);
-  const [formData, setFormData] = useState({ serviceId: "", motif: "", date: null, time: null });
-
-  const handleDateTimeSelect = (dateTime) => {
-    setFormData(prev => ({ ...prev, date: dateTime.date, time: dateTime.time }));
+  const showToast = (message, type = "info") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (formData.serviceId && formData.date && formData.time && formData.motif) {
-      onSubmit(formData);
+  const handleReservation = async (formData) => {
+    setLoading(true);
+    setTimeout(() => {
+      const newTicket = {
+        id: Date.now(),
+        number: `TKT-${Date.now()}`,
+        citizenName: user?.name || "RAKOTO Jean",
+        citizenId: user?.id || "CIN-123456",
+        serviceId: formData.serviceId,
+        serviceName: services.find((s) => s.id === formData.serviceId)?.name,
+        date: formData.date.toISOString().split("T")[0],
+        time: formData.time,
+        duration: services.find((s) => s.id === formData.serviceId)?.duration,
+        motif: formData.motif,
+        responsibleName: "Mme Rasoa",
+        counter: "Guichet 2",
+        status: "confirmed",
+      };
+      setActiveTicket(newTicket);
+      setHasReservation(true);
+      showToast("✅ Réservation confirmée !", "success");
+      setLoading(false);
+    }, 1000);
+  };
+
+  const handleCancelReservation = async () => {
+    if (confirm("Voulez-vous vraiment annuler votre réservation ?")) {
+      setLoading(true);
+      setTimeout(() => {
+        setActiveTicket(null);
+        setHasReservation(false);
+        showToast("❌ Réservation annulée", "error");
+        setLoading(false);
+      }, 500);
     }
   };
 
-  if (step === 1) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {services.map((service) => (
-          <button
-            key={service.id}
-            onClick={() => {
-              setSelectedService(service);
-              setFormData(prev => ({ ...prev, serviceId: service.id }));
-              setStep(2);
-            }}
-            className="group relative bg-white/5 backdrop-blur rounded-2xl p-6 text-left hover:bg-white/10 transition-all hover:scale-105 border border-white/10"
-          >
-            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-r ${service.color} rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition`} />
-            <div className="relative">
-              <div className="text-5xl mb-4">{service.icon}</div>
-              <h3 className="text-xl font-semibold text-white mb-1">{service.name}</h3>
-              <p className="text-white/50 text-sm mb-3">{service.description}</p>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="bg-white/10 rounded-full px-3 py-1 text-white/70">⏱️ {service.duration} min</span>
-                <span className="text-white/40">•</span>
-                <span className="text-white/50">Gratuit</span>
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner fullScreen />;
 
   return (
-    <div className="bg-white/5 backdrop-blur rounded-2xl p-8 border border-white/10">
-      {/* Service sélectionné */}
-      <div className="flex items-center justify-between p-4 bg-white/10 rounded-xl mb-6">
-        <div className="flex items-center gap-4">
-          <span className="text-4xl">{selectedService?.icon}</span>
-          <div>
-            <h3 className="text-lg font-semibold text-white">{selectedService?.name}</h3>
-            <p className="text-white/50 text-sm">Durée estimée : {selectedService?.duration} minutes</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      
+      {/* Header avec effet glassmorphism */}
+      <div className="sticky top-0 z-50 backdrop-blur-xl bg-white/10 border-b border-white/20">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <span className="text-2xl">🏛️</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white tracking-tight">
+                  Mairie de Fianarantsoa
+                </h1>
+                <p className="text-xs text-white/60">Service de réservation en ligne</p>
+              </div>
+            </div>
+            
+            {/* Profile Button */}
+            <button
+              onClick={() => setShowProfile(!showProfile)}
+              className="flex items-center gap-3 bg-white/10 backdrop-blur rounded-full px-3 py-2 hover:bg-white/20 transition"
+            >
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                <span className="text-sm text-white">{user?.name?.charAt(0) || "J"}</span>
+              </div>
+              <div className="text-left hidden sm:block">
+                <div className="text-sm font-medium text-white">{user?.name || "Citoyen"}</div>
+                <div className="text-xs text-white/50">{user?.phone || "034 12 345 67"}</div>
+              </div>
+            </button>
           </div>
         </div>
-        <button onClick={() => setStep(1)} className="text-white/60 hover:text-white transition">Modifier</button>
       </div>
 
-      <CalendarSelector service={selectedService} onSelect={handleDateTimeSelect} bookedSlots={bookedSlots} />
+      {/* Profile Modal */}
+      {showProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowProfile(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl max-w-md w-full p-6 animate-slide-up" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto text-3xl">
+                👤
+              </div>
+              <h3 className="text-xl font-bold mt-4">{user?.name || "RAKOTO Jean"}</h3>
+              <p className="text-gray-500">{user?.email || "jean.rakoto@email.com"}</p>
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm"><span className="font-medium">📱 Téléphone :</span> {user?.phone || "034 12 345 67"}</p>
+                <p className="text-sm mt-1"><span className="font-medium">🆔 CIN :</span> {user?.cin || "123 456 789 012"}</p>
+              </div>
+              <button className="mt-4 w-full py-2 bg-red-500 text-white rounded-lg">Déconnexion</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Motif */}
-      <div className="mt-6">
-        <label className="block text-white/80 mb-2">💬 Motif de la demande</label>
-        <textarea
-          value={formData.motif}
-          onChange={(e) => setFormData(prev => ({ ...prev, motif: e.target.value }))}
-          rows="3"
-          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-blue-500"
-          placeholder="Ex: Demande d'acte de naissance..."
-          required
-        />
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20" />
+        <div className="max-w-6xl mx-auto px-6 py-12 text-center">
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur rounded-full px-4 py-2 mb-6">
+            <span className="text-yellow-400">⭐</span>
+            <span className="text-sm text-white/80">Service rapide et simplifié</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            Prenez rendez-vous en
+            <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"> quelques clics</span>
+          </h2>
+          <p className="text-white/60 max-w-2xl mx-auto">
+            Choisissez votre service, sélectionnez un créneau et obtenez votre ticket en ligne.
+            Plus besoin de faire la queue à la mairie !
+          </p>
+        </div>
       </div>
 
-      <div className="flex gap-3 mt-6">
-        <button onClick={() => setStep(1)} className="flex-1 px-4 py-3 border border-white/20 rounded-xl text-white hover:bg-white/10 transition">
-          Retour
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={isLoading || !formData.date || !formData.time}
-          className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl text-white font-semibold hover:opacity-90 disabled:opacity-50 transition"
-        >
-          {isLoading ? "Réservation..." : "✅ Confirmer la réservation"}
-        </button>
+      {/* Contenu principal */}
+      <div className="max-w-6xl mx-auto px-6 pb-12">
+        {!hasReservation ? (
+          <ReservationForm
+            user={user}
+            services={services}
+            onSubmit={handleReservation}
+            bookedSlots={bookedSlots}
+            isLoading={loading}
+          />
+        ) : (
+          <TicketView
+            ticket={activeTicket}
+            onCancel={handleCancelReservation}
+            onAcceptOffer={null}
+            pendingOffer={null}
+          />
+        )}
       </div>
+
+      {/* Toast */}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 };
