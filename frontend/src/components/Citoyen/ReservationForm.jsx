@@ -1,5 +1,4 @@
-// frontend/src/components/Citoyen/ReservationForm.jsx
-import { useState, lazy } from "react";  // ← AJOUTE lazy ici !
+import React, { useState, lazy } from "react";
 
 export const ReservationForm = ({
   user,

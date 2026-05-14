@@ -28,19 +28,12 @@ export const CalendarSelector = ({ service, onSelect, bookedSlots = [] }) => {
           const timeStr = `${hour.toString().padStart(2, "0")}:${minute
             .toString()
             .padStart(2, "0")}`;
-          
-          // Vérifier si le créneau est déjà réservé
-          const dateStr = selectedDate.toISOString().split("T")[0];
-          const isBooked = bookedSlots.some(
-            (slot) => slot.date === dateStr && slot.time === timeStr
-          );
-          
-          slots.push({ time: timeStr, available: !isBooked });
+          slots.push({ time: timeStr, available: true });
         }
       }
       setAvailableTimes(slots);
     }
-  }, [selectedDate, bookedSlots]);
+  }, [selectedDate]);
 
   const formatDate = (date) => ({
     day: date.toLocaleDateString("fr-FR", { weekday: "short" }),
@@ -55,10 +48,8 @@ export const CalendarSelector = ({ service, onSelect, bookedSlots = [] }) => {
   };
 
   const handleTimeSelect = (slot) => {
-    if (slot.available) {
-      setSelectedTime(slot.time);
-      onSelect({ date: selectedDate, time: slot.time });
-    }
+    setSelectedTime(slot.time);
+    onSelect({ date: selectedDate, time: slot.time });
   };
 
   return (
@@ -104,13 +95,10 @@ export const CalendarSelector = ({ service, onSelect, bookedSlots = [] }) => {
                 key={idx}
                 type="button"
                 onClick={() => handleTimeSelect(slot)}
-                disabled={!slot.available}
                 className={`p-2 rounded-lg text-center transition-all ${
                   selectedTime === slot.time
                     ? "bg-green-500 text-white shadow-md"
-                    : slot.available
-                    ? "bg-gray-100 hover:bg-green-100"
-                    : "bg-gray-200 text-gray-400 line-through cursor-not-allowed"
+                    : "bg-gray-100 hover:bg-green-100"
                 }`}
               >
                 {slot.time}
