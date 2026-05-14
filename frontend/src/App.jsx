@@ -1,33 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastProvider } from "./hooks/useToast";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Home from "./pages/historicPlaces/home";
-import AdminPlaces from "./pages/historicPlaces/AdminPlaces";
-import ProtectedRoute from "./components/ProtectedRoute";
 import PageAdmin from "./pages/PageAdmin";
 import PageCitoyen from "./pages/PageCitoyen";
-
 
 export default function App() {
   return (
     <ToastProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/signalementAdmin" element={<ProtectedRoute><PageAdmin/></ProtectedRoute>} />
-          <Route path="/signalement" element={<PageCitoyen/>} />
-          <Route path="/" element={<Navigate to="/login" />} />
-          <Route path="/home" element={<Home />} />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <AdminPlaces />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/signalementAdmin" element={<PageAdmin />} />
+          <Route path="/signalement" element={<PageCitoyen />} />
+          <Route path="/" element={<Navigate to="/signalement" />} />
           <Route
             path="*"
             element={

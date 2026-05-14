@@ -1,10 +1,9 @@
 import mongoose from 'mongoose'
 
 const signalementSchema = new mongoose.Schema({
-  citoyenId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref:"User",
-    required: true
+  citoyenNom: {
+    type: String,
+    default: 'Anonyme'
   },
   typeProbleme: {
     type: String,
@@ -60,7 +59,6 @@ const signalementSchema = new mongoose.Schema({
   }
 })
 
-// Index géospatial pour recherche par proximité
 signalementSchema.index({ 'localisation.coordonnes': '2dsphere' })
 
 export default mongoose.model('Signalement', signalementSchema)

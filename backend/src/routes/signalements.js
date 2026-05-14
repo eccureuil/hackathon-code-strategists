@@ -3,34 +3,30 @@ import multer from 'multer'
 import Signalement from '../models/Signalement.js'
 
 const router = express.Router()
-const upload = multer({ dest: 'uploads/' }) // pour la photo
+const upload = multer({ dest: 'uploads/' })
 
-// POST /api/signalements - Créer un signalement
+// POST /api/signalements
 router.post('/', upload.single('photo'), async (req, res) => {
   try {
-  // On ne prend plus citoyenNom ni citoyenId depuis le body
-  const { typeProbleme, description, solutionProposee, lat, lng, adresse } = req.body;
+    const { citoyenNom, typeProbleme, description, solutionProposee, lat, lng, adresse } = req.body
 
-  // Récupération automatique de l'ID de l'utilisateur connecté
-  const citoyenId = req.user.id;   // ou req.user._id selon votre implémentation
+    const nouveau = new Signalement({
+      citoyenNom: citoyenNom || 'Anonyme',
+      typeProbleme,
+      description,
+      solutionProposee,
+      photo: req.file ? req.file.path : null,
+      localisation: {
+        coordonnes: [parseFloat(lng), parseFloat(lat)],
+        adresseTexte: adresse || null
+      }
+    })
 
-  const nouveau = new Signalement({
-    citoyenId,                      // ← ID auto-rempli
-    typeProbleme,
-    description,
-    solutionProposee,
-    photo: req.file ? req.file.path : null,
-    localisation: {
-      coordonnes: [parseFloat(lng), parseFloat(lat)],   // [longitude, latitude]
-      adresseTexte: adresse || null
-    }
-  });
-
-  await nouveau.save();
-  res.status(201).json(nouveau);
-} catch (error) {
-  res.status(500).json({ message: error.message });
-}
+    await nouveau.save()
+    res.status(201).json(nouveau)
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
 })
 
 // GET /api/signalements/mes-signalements?nom=XXX
@@ -59,7 +55,7 @@ router.get('/verifier-doublon', async (req, res) => {
           $maxDistance: rayonMetres
         }
       },
-      statut: { $ne: 'resolu' } // on ignore les résolus
+      statut: { $ne: 'resolu' }
     }).limit(3)
 
     if (signalements.length > 0) {
@@ -85,7 +81,7 @@ router.put('/:id/plusun', async (req, res) => {
   }
 })
 
-// PUT /api/signalements/:id/statut - Admin (à sécuriser plus tard)
+// PUT /api/signalements/:id/statut
 router.put('/:id/statut', async (req, res) => {
   try {
     const { statut, reponseAdmin, serviceAssigne } = req.body
@@ -102,7 +98,7 @@ router.put('/:id/statut', async (req, res) => {
   }
 })
 
-// GET /api/signalements/tous - Admin (tous les signalements)
+// GET /api/signalements/tous
 router.get('/tous', async (req, res) => {
   try {
     const signalements = await Signalement.find().sort({ dateCreation: -1 })

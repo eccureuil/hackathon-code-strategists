@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 
 let addNotificationGlobal = null
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const showNotification = (message, type = 'info') => {
   if (addNotificationGlobal) {
     addNotificationGlobal(message, type)
