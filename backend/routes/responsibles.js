@@ -13,11 +13,13 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST créer un responsable
 router.post("/", async (req, res) => {
   try {
+    console.log("DATA RECEIVED:", req.body);
+
     const responsible = new Responsible(req.body);
     await responsible.save();
+
     res.status(201).json(responsible);
   } catch (error) {
     res.status(500).json({ error: error.message });

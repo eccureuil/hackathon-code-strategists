@@ -11,7 +11,8 @@ export const AdminDashboard = () => {
   const [filteredTickets, setFilteredTickets] = useState([]);
   const [responsibles, setResponsibles] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchType, setSearchType] = useState("all"); // all, number, name, phone
+  const [searchType, setSearchType] = useState("all");
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [stats, setStats] = useState({
     todayTickets: 0,
     waitingTickets: 0,
@@ -21,23 +22,32 @@ export const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Récupérer tous les tickets
- const fetchTickets = async () => {
-  try {
-    const response = await fetch("http://localhost:3000/api/reservations");
-    const data = await response.json();
-    setTickets(data);
-    setFilteredTickets(data);
-    updateStats(data);
-  } catch (error) {
-    console.error("Erreur:", error);
-  } finally {
-    setLoading(false); // ← AJOUTE CETTE LIGNE
-  }
+  // Horloge temps réel
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
+  // Chargement initial
+  useEffect(() => {
+    fetchTickets();
+    fetchResponsibles();
+  }, []);
+
+  const fetchTickets = async () => {
+    try {
+      const response = await fetch("http://localhost:3000/api/reservations");
+      const data = await response.json();
+      setTickets(data);
+      setFilteredTickets(data);
+      updateStats(data);
+    } catch (error) {
+      console.error("Erreur:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Récupérer les responsables
   const fetchResponsibles = async () => {
     try {
       const response = await fetch("http://localhost:3000/api/responsibles");
@@ -48,31 +58,28 @@ export const AdminDashboard = () => {
     }
   };
 
-  // Mettre à jour les statistiques
- const updateStats = (data) => {
-  const waiting = data.filter(t => t.status === "confirmed");
-  const completed = data.filter(t => t.status === "completed");
-  const absent = data.filter(t => t.status === "absent");
-  
-  setStats({
-    todayTickets: data.length,
-    waitingTickets: waiting.length,
-    completedTickets: completed.length,
-    absentTickets: absent.length,
-    avgWaitTime: 12,
-  });
-};
+  const updateStats = (data) => {
+    const today = new Date().toISOString().split("T")[0];
+    const todayTickets = data.filter(t => t.date === today);
+    const waiting = data.filter(t => t.status === "confirmed" && t.date === today);
+    const completed = data.filter(t => t.status === "completed");
+    const absent = data.filter(t => t.status === "absent");
+    setStats({
+      todayTickets: todayTickets.length,
+      waitingTickets: waiting.length,
+      completedTickets: completed.length,
+      absentTickets: absent.length,
+      avgWaitTime: 12,
+    });
+  };
 
-  // Fonction de recherche
   const handleSearch = (term, type) => {
     setSearchTerm(term);
     setSearchType(type);
-    
     if (!term.trim()) {
       setFilteredTickets(tickets);
       return;
     }
-    
     const lowerTerm = term.toLowerCase();
     const filtered = tickets.filter(ticket => {
       switch (type) {
@@ -91,48 +98,54 @@ export const AdminDashboard = () => {
     setFilteredTickets(filtered);
   };
 
-  // Marquer comme terminé
   const handleMarkCompleted = async (ticketId) => {
     try {
-      await fetch(`http://localhost:3000/api/reservations/${ticketId}/complete`, {
-        method: "PUT",
-      });
+      await fetch(`http://localhost:3000/api/reservations/${ticketId}/complete`, { method: "PUT" });
       fetchTickets();
     } catch (error) {
       console.error("Erreur:", error);
     }
   };
 
-  // Marquer comme absent
   const handleMarkAbsent = async (ticketId) => {
     try {
-      await fetch(`http://localhost:3000/api/reservations/${ticketId}/absent`, {
-        method: "PUT",
-      });
+      await fetch(`http://localhost:3000/api/reservations/${ticketId}/absent`, { method: "PUT" });
       fetchTickets();
     } catch (error) {
       console.error("Erreur:", error);
     }
   };
 
-  // Ajouter un responsable
+  const handleStartProcessing = async (ticketId) => {
+    try {
+      await fetch(`http://localhost:3000/api/reservations/${ticketId}/start`, { method: "PUT" });
+      fetchTickets();
+    } catch (error) {
+      console.error("Erreur:", error);
+    }
+  };
+
   const handleAddResponsible = async (data) => {
     try {
       const response = await fetch("http://localhost:3000/api/responsibles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (response.ok) {
-        fetchResponsibles();
-      }
-    } catch (error) {
-      console.error("Erreur:", error);
-    }
-  };
-  
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
 
-  // Modifier un responsable
+    if (response.ok) {
+      alert("✅ Responsable ajouté avec succès !");
+      fetchResponsibles();
+    } else {
+      alert("❌ Erreur lors de l'ajout !");
+    }
+
+  } catch (error) {
+    console.error("Erreur:", error);
+    alert("⚠️ Erreur serveur !");
+  }
+  };
+
   const handleUpdateResponsible = async (id, data) => {
     try {
       const response = await fetch(`http://localhost:3000/api/responsibles/${id}`, {
@@ -140,18 +153,11 @@ export const AdminDashboard = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (response.ok) {
-        fetchResponsibles();
-      }
+      if (response.ok) fetchResponsibles();
     } catch (error) {
       console.error("Erreur:", error);
     }
   };
-
-  useEffect(() => {
-    fetchTickets();
-    fetchResponsibles();
-  }, []);
 
   const formattedTickets = filteredTickets.map(ticket => ({
     id: ticket._id,
@@ -165,11 +171,125 @@ export const AdminDashboard = () => {
     status: ticket.status === "confirmed" ? "pending" : ticket.status,
     responsible: ticket.responsibleName || "À assigner",
   }));
+  const handleDeleteResponsible = async (id) => {
+
+  const confirmDelete = window.confirm(
+    "❌ Voulez-vous vraiment supprimer ce responsable ?"
+  );
+
+  if (!confirmDelete) return;
+
+  try {
+
+    await fetch(
+      `http://localhost:3000/api/responsibles/${id}`,
+      {
+        method: "DELETE"
+      }
+    );
+
+    alert("✅ Responsable supprimé avec succès");
+
+    fetchResponsibles();
+
+  } catch (error) {
+
+    console.error("Erreur:", error);
+
+    alert("⚠️ Erreur lors de la suppression");
+
+  }
+};
+
+  // Auto-absent après 15 min — placé APRÈS formattedTickets
+useEffect(() => {
+
+  const checkAbsent = async () => {
+    const now = new Date();
+
+    for (const ticket of tickets) {
+
+      // Seulement les tickets confirmés
+      if (ticket.status !== "confirmed") continue;
+
+      // Vérification sécurité
+      if (!ticket.date || !ticket.time) continue;
+
+      // Extraire seulement YYYY-MM-DD
+      const onlyDate = new Date(ticket.date)
+        .toISOString()
+        .split("T")[0];
+
+      // Recréer une vraie date valide
+      const ticketDateTime = new Date(
+        `${onlyDate}T${ticket.time}`
+      );
+
+      // Vérifier si la date est valide
+      if (isNaN(ticketDateTime.getTime())) {
+        console.log("Date invalide :", ticket);
+        continue;
+      }
+
+      // Différence en minutes
+      const diffMinutes = Math.floor(
+        (now - ticketDateTime) / 60000
+      );
+
+      console.log(
+        ticket.ticketNumber,
+        diffMinutes,
+        "minutes"
+      );
+
+      // Après 15 minutes
+      if (diffMinutes >= 15 && now > ticketDateTime) {
+
+        try {
+
+          await fetch(
+            `http://localhost:3000/api/reservations/${ticket._id}/absent`,
+            {
+              method: "PUT"
+            }
+          );
+
+          console.log(
+            `Ticket ${ticket.ticketNumber} marqué absent`
+          );
+
+        } catch (error) {
+
+          console.error(
+            "Erreur auto-absent:",
+            error
+          );
+
+        }
+      }
+    }
+
+    // Rafraîchir
+    fetchTickets();
+  };
+
+  // Vérification immédiate
+  checkAbsent();
+
+  // Vérification toutes les minutes
+  const interval = setInterval(
+    checkAbsent,
+    60000
+  );
+
+  return () => clearInterval(interval);
+
+}, []);
 
   const tabs = [
-    { id: "queue", label: "🎫 File d'attente", icon: "🎫" },
-    { id: "responsibles", label: "👨‍💼 Responsables", icon: "👨‍💼" },
-    { id: "statistics", label: "📊 Statistiques", icon: "📊" },
+    { id: "queue", label: "🎫 File d'attente" },
+    { id: "responsibles", label: "👨‍💼 Responsables" },
+    { id: "statistics", label: "📊 Statistiques" },
   ];
 
   if (loading) {
@@ -191,14 +311,18 @@ export const AdminDashboard = () => {
               <p className="text-sm text-gray-400">Gestion des tickets et responsables</p>
             </div>
             <div className="text-right">
-              <div className="text-sm">Admin</div>
-              <div className="text-xs text-gray-400">Fianarantsoa</div>
+              <div className="text-sm font-mono bg-blue-500/20 px-3 py-1 rounded-lg">
+                🕐 {currentTime.toLocaleTimeString("fr-FR")}
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                {currentTime.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Stats rapides */}
+      {/* Stats */}
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-white rounded-xl p-3 shadow-sm">
@@ -221,34 +345,24 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Barre de recherche */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="max-w-7xl mx-auto px-4 py-2">
         <div className="bg-white rounded-xl shadow-sm p-4">
           <div className="flex flex-wrap gap-3 items-center">
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleSearch(searchTerm, "all")}
-                className={`px-3 py-1 rounded-full text-sm ${searchType === "all" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-              >
-                <Ticket className="w-4 h-4 inline mr-1" /> Tous
-              </button>
-              <button
-                onClick={() => handleSearch(searchTerm, "number")}
-                className={`px-3 py-1 rounded-full text-sm ${searchType === "number" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-              >
-                <Ticket className="w-4 h-4 inline mr-1" /> N° Ticket
-              </button>
-              <button
-                onClick={() => handleSearch(searchTerm, "name")}
-                className={`px-3 py-1 rounded-full text-sm ${searchType === "name" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-              >
-                <User className="w-4 h-4 inline mr-1" /> Citoyen
-              </button>
-              <button
-                onClick={() => handleSearch(searchTerm, "phone")}
-                className={`px-3 py-1 rounded-full text-sm ${searchType === "phone" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-              >
-                <Phone className="w-4 h-4 inline mr-1" /> Téléphone
-              </button>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { type: "all", label: "Tous" },
+                { type: "number", label: "N° Ticket" },
+                { type: "name", label: "Citoyen" },
+                { type: "phone", label: "Téléphone" },
+              ].map(btn => (
+                <button
+                  key={btn.type}
+                  onClick={() => handleSearch(searchTerm, btn.type)}
+                  className={`px-3 py-1 rounded-full text-sm ${searchType === btn.type ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+                >
+                  {btn.label}
+                </button>
+              ))}
             </div>
             <div className="flex-1 relative">
               <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -257,7 +371,7 @@ export const AdminDashboard = () => {
                 placeholder="Rechercher..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value, searchType)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="text-sm text-gray-500">
@@ -268,7 +382,7 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Tabs */}
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4 mt-4">
         <div className="flex gap-2 border-b border-gray-200">
           {tabs.map((tab) => (
             <button
@@ -293,17 +407,20 @@ export const AdminDashboard = () => {
             tickets={formattedTickets}
             onMarkAbsent={handleMarkAbsent}
             onMarkCompleted={handleMarkCompleted}
+            
           />
         )}
         {activeTab === "responsibles" && (
-          <ResponsibleManager
-            responsibles={responsibles}
-            onAdd={handleAddResponsible}
-            onUpdate={handleUpdateResponsible}
-          />
+  <ResponsibleManager
+    responsibles={responsibles}
+    onAdd={handleAddResponsible}
+    onUpdate={handleUpdateResponsible}
+    onDelete={handleDeleteResponsible}
+  />
+
         )}
         {activeTab === "statistics" && (
-          <StatisticsCard stats={stats} />
+          <StatisticsCard tickets={tickets} />
         )}
       </div>
     </div>

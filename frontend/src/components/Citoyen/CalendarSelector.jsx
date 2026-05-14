@@ -1,131 +1,182 @@
 // frontend/src/components/Citoyen/CalendarSelector.jsx
 import { useState, useEffect } from "react";
 
-export const CalendarSelector = ({ onSelect, bookedSlots = [] }) => {
+export const CalendarSelector = ({ service, onSelect, bookedSlots = [] }) => {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
-  const [availableDates, setAvailableDates] = useState([]);
   const [availableTimes, setAvailableTimes] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Générer les 7 prochains jours
-  useEffect(() => {
+  // Générer les jours du mois
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
     const days = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() + i);
-      date.setHours(0, 0, 0, 0);
-      days.push(date);
+    
+    const firstDayOfWeek = firstDay.getDay();
+    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+      const prevDate = new Date(year, month, -i);
+      days.push({ date: prevDate, isCurrentMonth: false });
     }
-    setAvailableDates(days);
-  }, []);
+    
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+      const currentDate = new Date(year, month, i);
+      days.push({ date: currentDate, isCurrentMonth: true });
+    }
+    
+    const remainingDays = 42 - days.length;
+    for (let i = 1; i <= remainingDays; i++) {
+      const nextDate = new Date(year, month + 1, i);
+      days.push({ date: nextDate, isCurrentMonth: false });
+    }
+    
+    return days;
+  };
 
-  // Générer les heures disponibles (8h-17h)
-  useEffect(() => {
-    if (selectedDate) {
+  // Récupérer les créneaux disponibles depuis le backend - VERSION CORRIGÉE
+  const fetchAvailableSlots = async (date) => {
+    setLoading(true);
+    try {
+      const dateStr = date.toISOString().split("T")[0];
+      const response = await fetch(`http://localhost:3000/api/reservations/slots/${dateStr}`);
+      const data = await response.json();
+      setAvailableTimes(data.available || []);
+    } catch (error) {
+      console.error("Erreur chargement créneaux:", error);
+      // Fallback : générer des créneaux par défaut
       const slots = [];
       for (let hour = 8; hour < 17; hour++) {
-        for (let minute = 0; minute < 60; minute += 15) {
-          const timeStr = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-          slots.push({ time: timeStr, available: true });
-        }
+        ["00", "15", "30", "45"].forEach(min => {
+          const time = `${hour}:${min}`;
+          if (!bookedSlots.includes(time)) slots.push(time);
+        });
       }
       setAvailableTimes(slots);
+    } finally {
+      setLoading(false); // ← CORRECTION : finally garantit que loading repasse à false
+    }
+  };
+
+  useEffect(() => {
+    if (selectedDate) {
+      fetchAvailableSlots(selectedDate);
       setSelectedTime(null);
     }
   }, [selectedDate]);
 
   const formatDate = (date) => {
-    const days = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
-    const months = ["jan", "fév", "mar", "avr", "mai", "jun", "jul", "aoû", "sep", "oct", "nov", "déc"];
     return {
-      day: days[date.getDay()],
-      date: date.getDate(),
-      month: months[date.getMonth()],
+      day: date.toLocaleDateString("fr-FR", { weekday: "short" }).toUpperCase(),
+      number: date.getDate(),
+      month: date.toLocaleDateString("fr-FR", { month: "short" }),
       full: date.toISOString().split("T")[0],
-      isToday: date.toDateString() === new Date().toDateString()
+      isToday: date.toDateString() === new Date().toDateString(),
+      isPast: date < new Date().setHours(0, 0, 0, 0)
     };
   };
 
-  const handleDateSelect = (date) => {
-    setSelectedDate(date);
-    setSelectedTime(null);
+  const changeMonth = (delta) => {
+    const newDate = new Date(currentMonth);
+    newDate.setMonth(currentMonth.getMonth() + delta);
+    setCurrentMonth(newDate);
   };
 
-  const handleTimeSelect = (time) => {
-    setSelectedTime(time);
-    onSelect({ date: selectedDate, time: time });
-  };
+  const days = getDaysInMonth(currentMonth);
+  const monthNames = ["JANVIER", "FEVRIER", "MARS", "AVRIL", "MAI", "JUIN", "JUILLET", "AOUT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DECEMBRE"];
+  const weekDays = ["LUN", "MAR", "MER", "JEU", "VEN", "SAM", "DIM"];
 
   return (
     <div className="space-y-6">
-      {/* Sélection de la date */}
-      <div>
-        <label className="block text-white/80 mb-3 text-sm font-medium">
-          📅 Choisissez une date
-        </label>
-        <div className="grid grid-cols-7 gap-2">
-          {availableDates.map((date, idx) => {
-            const d = formatDate(date);
+      {/* Calendrier */}
+      <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+        <div className="flex justify-between items-center mb-4">
+          <button onClick={() => changeMonth(-1)} className="text-white/60 hover:text-white text-2xl">◀</button>
+          <h3 className="text-white font-bold text-lg">
+            {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+          </h3>
+          <button onClick={() => changeMonth(1)} className="text-white/60 hover:text-white text-2xl">▶</button>
+        </div>
+        
+        <div className="grid grid-cols-7 gap-1 mb-2">
+          {weekDays.map(day => (
+            <div key={day} className="text-center text-white/50 text-xs py-2">{day}</div>
+          ))}
+        </div>
+        
+        <div className="grid grid-cols-7 gap-1">
+          {days.map((day, idx) => {
+            const d = formatDate(day.date);
             const isSelected = selectedDate?.toISOString().split("T")[0] === d.full;
+            const isDisabled = d.isPast || !day.isCurrentMonth;
+            
             return (
               <button
                 key={idx}
-                type="button"
-                onClick={() => handleDateSelect(date)}
+                onClick={() => !isDisabled && setSelectedDate(day.date)}
+                disabled={isDisabled}
                 className={`
-                  p-3 rounded-xl text-center transition-all duration-200
-                  ${isSelected 
-                    ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-105" 
-                    : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
-                  }
-                  ${d.isToday ? "ring-2 ring-yellow-400/50" : ""}
+                  p-2 rounded-lg text-center transition-all
+                  ${!day.isCurrentMonth ? "opacity-30" : ""}
+                  ${isSelected ? "bg-blue-500 text-white shadow-lg scale-105" : "text-white hover:bg-white/10"}
+                  ${d.isToday ? "ring-2 ring-yellow-400" : ""}
+                  ${isDisabled ? "opacity-30 cursor-not-allowed" : ""}
                 `}
               >
-                <div className="text-xs opacity-80">{d.day}</div>
-                <div className="text-xl font-bold">{d.date}</div>
-                <div className="text-xs opacity-60">{d.month}</div>
+                <div className="text-sm">{d.number}</div>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Sélection de l'heure */}
+      {/* Sélection de l'heure - Affiche uniquement les heures disponibles */}
       {selectedDate && (
         <div>
           <label className="block text-white/80 mb-3 text-sm font-medium">
-            ⏰ Choisissez une heure
+            ⏰ Créneaux disponibles pour le {selectedDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
           </label>
-          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
-            {availableTimes.map((slot, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleTimeSelect(slot.time)}
-                className={`
-                  p-2 rounded-lg text-center transition-all duration-200
-                  ${selectedTime === slot.time
-                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md scale-105"
-                    : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
-                  }
-                `}
-              >
-                {slot.time}
-              </button>
-            ))}
-          </div>
+          {loading ? (
+            <div className="text-center py-4 text-white/50">Chargement des créneaux...</div>
+          ) : availableTimes.length === 0 ? (
+            <div className="text-center py-4 text-yellow-400 bg-yellow-400/10 rounded-lg">
+              ⚠️ Aucun créneau disponible pour cette date
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 md:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-2 bg-white/5 rounded-xl">
+              {availableTimes.map((time, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setSelectedTime(time);
+                    onSelect({ date: selectedDate, time: time });
+                  }}
+                  className={`
+                    p-2 rounded-lg text-center transition-all
+                    ${selectedTime === time
+                      ? "bg-green-500 text-white shadow-md scale-105"
+                      : "bg-white/10 text-white hover:bg-white/20"
+                    }
+                  `}
+                >
+                  {time}
+                </button>
+              ))}
+            </div>
+          )}
           {selectedTime && (
             <div className="mt-3 text-center text-green-400 text-sm animate-pulse">
-              ✓ Heure sélectionnée : {selectedTime}
+              ✓ Rendez-vous confirmé le {selectedDate.toLocaleDateString("fr-FR")} à {selectedTime}
             </div>
           )}
         </div>
       )}
 
-      {/* Message si aucune date sélectionnée */}
       {!selectedDate && (
         <div className="text-center text-white/40 text-sm py-4">
-          👆 Cliquez sur une date pour voir les horaires disponibles
+          📅 Sélectionnez une date dans le calendrier
         </div>
       )}
     </div>

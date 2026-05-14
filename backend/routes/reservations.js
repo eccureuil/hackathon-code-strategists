@@ -9,7 +9,9 @@ import {
   completeReservation,
   absentReservation,
   getDailyStats,
-  getAvailableSlots
+  getAvailableSlots,
+  startProcessing,
+  autoMarkAbsent
 } from "../controllers/reservationController.js";
 
 const router = express.Router();
@@ -25,5 +27,7 @@ router.get("/:id", getReservationById);
 router.put("/:id/cancel", cancelReservation);
 router.put("/:id/complete", completeReservation);
 router.put("/:id/absent", absentReservation);
+router.put("/:id/start", startProcessing);
+router.put("/auto-mark-absent", autoMarkAbsent);  // ⭐ Nouvelle route auto
 
 export default router;

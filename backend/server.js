@@ -19,27 +19,36 @@ app.use(express.json());
 
 // Routes
 app.use("/api/reservations", reservationRoutes);
-app.use("/api/responsibles", responsibleRoutes);  // ← Déplacer ICI après app.use
+app.use("/api/responsibles", responsibleRoutes);
+
+// ⭐ Fonction de vérification automatique des retards
+const startAutoAbsentChecker = () => {
+  // Vérification toutes les minutes
+  setInterval(async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/reservations/auto-mark-absent`, {
+        method: "PUT"
+      });
+      const data = await response.json();
+      if (data.updatedCount > 0) {
+        console.log(`🕐 ${new Date().toLocaleTimeString()} - ${data.message}`);
+      }
+    } catch (error) {
+      // Silencieux pour ne pas polluer les logs
+    }
+  }, 60000); // Toutes les 60 secondes
+};
+
+// Démarrer le vérificateur automatique
+startAutoAbsentChecker();
 
 // Root route
 app.get("/", (req, res) => {
   res.json({ 
     message: "API Mairie de Fianarantsoa", 
     version: "1.0.0",
-    endpoints: {
-      "GET /api/reservations": "Liste des réservations",
-      "POST /api/reservations": "Créer une réservation",
-      "GET /api/reservations/stats/daily": "Statistiques du jour",
-      "GET /api/reservations/slots/:date": "Créneaux disponibles",
-      "GET /api/reservations/date/:date": "Réservations par date",
-      "GET /api/reservations/citizen/:phone": "Réservations par citoyen",
-      "PUT /api/reservations/:id/cancel": "Annuler",
-      "PUT /api/reservations/:id/complete": "Compléter",
-      "PUT /api/reservations/:id/absent": "Absent",
-      "GET /api/responsibles": "Liste des responsables",
-      "POST /api/responsibles": "Créer un responsable",
-      "PUT /api/responsibles/:id": "Modifier un responsable",
-      "DELETE /api/responsibles/:id": "Supprimer un responsable"
+    features: {
+      autoAbsent: "✅ Activé (vérification toutes les minutes)"
     }
   });
 });
@@ -47,5 +56,6 @@ app.get("/", (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`\n🚀 Serveur démarré sur http://localhost:${PORT}`);
-  console.log(`📊 API MongoDB: ${process.env.MONGODB_URI}\n`);
+  console.log(`📊 API MongoDB: ${process.env.MONGODB_URI}`);
+  console.log(`⏰ Vérification automatique des retards: ACTIVE (toutes les minutes)\n`);
 });

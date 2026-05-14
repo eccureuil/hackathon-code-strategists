@@ -12,11 +12,80 @@ export const ReservationForm = ({ services, onSubmit, bookedSlots, isLoading }) 
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    if (formData.serviceId && formData.date && formData.time && formData.motif) {
-      onSubmit(formData);
-    }
-  };
+  e.preventDefault();
+
+  if (
+    !formData.serviceId ||
+    !formData.date ||
+    !formData.time ||
+    !formData.motif
+  ) {
+    return;
+  }
+
+ const now = new Date();
+
+// Date locale correcte
+const today =
+  now.getFullYear() +
+  "-" +
+  String(now.getMonth() + 1).padStart(2, "0") +
+  "-" +
+  String(now.getDate()).padStart(2, "0");
+
+// Date choisie
+const selectedDate = formData.date
+  .toLocaleDateString("en-CA");
+
+// Heure actuelle
+const currentTime =
+  String(now.getHours()).padStart(2, "0") +
+  ":" +
+  String(now.getMinutes()).padStart(2, "0");
+
+// Vérifications
+const isPastDate = selectedDate < today;
+const isPastTime =
+  selectedDate === today &&
+  formData.time <= currentTime;
+
+// Cas 1 : date + heure passées
+if (isPastDate && isPastTime) {
+
+  alert(
+    `📅⏰ La date et l'heure sélectionnées sont déjà passées.\nVeuillez choisir un nouveau créneau disponible.`
+  );
+
+  return;
+}
+
+// Cas 2 : date passée
+if (isPastDate) {
+
+  alert(
+    `📅 La date sélectionnée est déjà passée.\nVeuillez choisir une autre date.`
+  );
+
+  return;
+}
+
+// Cas 3 : heure passée
+if (isPastTime) {
+
+  alert(
+    `⏰ Le créneau de ${formData.time} est déjà dépassé.\nVeuillez sélectionner une autre heure.`
+  );
+
+  return;
+}
+
+// Confirmation
+alert(
+  `✅ Réservation confirmée pour le ${selectedDate} à ${formData.time}.`
+);
+
+onSubmit(formData);
+};
 
   if (step === 1) {
     return (

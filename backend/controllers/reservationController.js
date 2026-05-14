@@ -107,7 +107,7 @@ export const completeReservation = async (req, res) => {
   }
 };
 
-// Marquer comme absent
+// Marquer comme absent (manuel)
 export const absentReservation = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
@@ -119,6 +119,74 @@ export const absentReservation = async (req, res) => {
     
     res.json(ticket);
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Marquer comme "en cours"
+export const startProcessing = async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ error: "Ticket non trouvé" });
+    
+    ticket.status = "waiting";
+    ticket.updatedAt = Date.now();
+    await ticket.save();
+    
+    res.json(ticket);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ⭐ NOUVEAU - Vérifier et marquer automatiquement les tickets en retard
+export const autoMarkAbsent = async (req, res) => {
+  try {
+    const now = new Date();
+    const currentDate = now.toISOString().split("T")[0];
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    
+    // Récupérer tous les tickets du jour qui sont encore "confirmed"
+    const tickets = await Ticket.find({ 
+      date: currentDate, 
+      status: "confirmed" 
+    });
+    
+    let updatedCount = 0;
+    const updatedTickets = [];
+    
+    for (const ticket of tickets) {
+      const [ticketHour, ticketMinute] = ticket.time.split(":").map(Number);
+      const ticketTimeInMinutes = ticketHour * 60 + ticketMinute;
+      const delayMinutes = currentTimeInMinutes - ticketTimeInMinutes;
+      
+      // Si retard >= 15 minutes, passer en "absent"
+      if (delayMinutes >= 15) {
+        ticket.status = "absent";
+        ticket.updatedAt = now;
+        await ticket.save();
+        updatedCount++;
+        updatedTickets.push({
+          number: ticket.ticketNumber,
+          citizen: ticket.citizenName,
+          time: ticket.time,
+          delay: delayMinutes
+        });
+        console.log(`✅ Auto-absent: ${ticket.ticketNumber} (${ticket.citizenName}) - ${delayMinutes} min de retard`);
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `${updatedCount} ticket(s) marqué(s) absent automatiquement`,
+      updatedCount,
+      updatedTickets,
+      checkedAt: now.toISOString()
+    });
+  } catch (error) {
+    console.error("❌ Erreur autoMarkAbsent:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -141,7 +209,7 @@ export const getDailyStats = async (req, res) => {
       completed, 
       cancelled, 
       absent,
-      available: 45 - total // 45 créneaux max par jour (9h * 4 créneaux/heure)
+      available: 45 - total
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
