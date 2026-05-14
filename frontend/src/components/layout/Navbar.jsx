@@ -1,0 +1,66 @@
+import { Link, useLocation } from "react-router-dom";
+
+function parseToken(token) {
+  try {
+    return JSON.parse(atob(token.split(".")[1]));
+  } catch {
+    return null;
+  }
+}
+
+export default function Navbar() {
+  const location = useLocation();
+  const token = localStorage.getItem("token");
+  const decoded = token ? parseToken(token) : null;
+  const isAdmin = decoded?.role === "admin";
+
+  if (!token) return null;
+
+  const isActive = (path) =>
+    location.pathname === path
+      ? "text-emerald-600 font-semibold"
+      : "text-slate-500 hover:text-emerald-600";
+
+  return (
+    <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <Link to="/home" className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-lg font-bold group-hover:bg-emerald-700 transition-colors">
+              F
+            </div>
+            <span className="font-bold text-lg text-slate-800 hidden sm:block">
+              Fianar Smart City
+            </span>
+          </Link>
+
+          <div className="flex items-center gap-1 sm:gap-2">
+            <NavLink to="/home" isActive={isActive("/home")} label="Explorer" />
+            {isAdmin && <NavLink to="/admin" isActive={isActive("/admin")} label="Admin" />}
+            <div className="h-5 w-px bg-slate-200 mx-2" />
+            <button
+              onClick={() => {
+                localStorage.removeItem("token");
+                window.location.href = "/login";
+              }}
+              className="text-sm text-slate-500 hover:text-red-600 transition-colors px-2 py-1.5"
+            >
+              Déconnexion
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function NavLink({ to, isActive, label }) {
+  return (
+    <Link
+      to={to}
+      className={`text-sm px-3 py-1.5 rounded-lg transition-all duration-200 ${isActive}`}
+    >
+      {label}
+    </Link>
+  );
+}
