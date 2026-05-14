@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Home from "./pages/historicPlaces/home";
+import AdminPlaces from "./pages/historicPlaces/AdminPlaces";
 
 export default function App() {
   return (
@@ -9,6 +11,8 @@ export default function App() {
         <Routes>
           {/* route par défaut */}
           <Route path="/" element={<Navigate to="/login" />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/admin" element={<AdminPlaces />} />
 
           {/* auth */}
           <Route path="/login" element={<Login />} />

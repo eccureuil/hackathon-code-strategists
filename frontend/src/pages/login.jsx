@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import API from "../services/api";
 
 export default function Login() {
@@ -7,6 +7,8 @@ export default function Login() {
     email: "",
     mdp: ""
   });
+
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -16,13 +18,24 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await API.post("/users/login", form);
-      localStorage.setItem("token", res.data.token);
-      alert("Connexion réussie 🚀");
+        const res = await API.post("/users/login", form);
+
+        localStorage.setItem("token", res.data.token);
+
+        alert("Connexion réussie");
+
+        const user = res.data.user; // 👈 important
+
+        if (user?.role === "admin") {
+        navigate("/admin");
+        } else {
+        navigate("/home");
+        }
+
     } catch (err) {
-      alert(err.response?.data?.message || "Erreur login");
+        alert(err.response?.data?.message || "Erreur login");
     }
-  };
+    };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-700 px-4">
